@@ -1,0 +1,17 @@
+<AccessControlPolicy xmlns="http://doc.s3.amazonaws.com/2006-03-01">
+	<Owner>
+		<ID><%= @bucket.user.access_id %></ID>
+		<DisplayName><%= @bucket.user.display_name %></DisplayName>
+	</Owner>
+	<AccessControlList>
+		<% @acls.each do |grant| %>
+		<Grant>
+			<Grantee xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="CanonicalUser">
+				<ID><%= grant.user.access_id %></ID>
+				<DisplayName><%= grant.user.email %></DisplayName>
+			</Grantee>
+			<Permission><%= grant.permission.upcase %></Permission>
+		</Grant>
+		<% end %>
+	</AccessControlList>
+</AccessControlPolicy>

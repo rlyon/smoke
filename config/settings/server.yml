@@ -1,0 +1,32 @@
+production:
+    logfiles: /tmp
+    host: smoke.mybigu.edu
+    max_buckets: 32
+    max_metadata_size: 128
+    default_max_keys: 1000
+    auto_activate: false
+    admin_email: admin@mybig.edu
+    upload_chunks: 1024
+    filepath: /mnt/smoke
+    
+development:
+    logfiles: /tmp
+    host: localhost
+    max_buckets: 2
+    max_metadata_size: 10
+    default_max_keys: 100
+    auto_activate: true
+    admin_email: admin@mybig.edu
+    upload_chunks: 1024
+    filepath: /tmp/smoke
+    
+test:
+    logfiles: /tmp
+    host: example.org
+    max_buckets: 2
+    max_metadata_size: 5
+    default_max_keys: 10
+    auto_activate: true
+    admin_email: admin@mybig.edu
+    upload_chunks: 1024
+    filepath: /tmp/smoke

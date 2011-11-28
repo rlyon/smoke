@@ -1,0 +1,140 @@
+module Smoke
+  module Server
+    # From the amazon s3 developers guide the following restrictions are placed on bucket names:
+    # To comply with Amazon S3 requirements, bucket names:
+    #     Can contain lowercase letters, numbers, periods (.), underscores (_), and dashes (-)
+    #     Must start with a number or letter
+    #     Must be between 3 and 255 characters long 
+    #     Must not be formatted as an IP address (e.g., 192.168.5.4)
+    #
+    # To conform with DNS requirements, we recommend following these additional guidelines when creating buckets:
+    #     Bucket names should not contain underscores (_)
+    #     Bucket names should be between 3 and 63 characters long
+    #     Bucket names should not end with a dash
+    #     Bucket names cannot contain two, adjacent periods
+    #     Bucket names cannot contain dashes next to periods (e.g., "my-.bucket.com" and "my.-bucket" are invalid)
+    #
+    class Bucket < ActiveRecord::Base
+      belongs_to :user
+      has_many :acls, :dependent => :destroy
+      has_many :assets, :dependent => :destroy
+      
+      scope :public_read, where(:visibility => 'public')
+      
+      attr_reader :truncated
+      
+      # Conforming to DNS requirements
+      validates :name, :length => { :in => 3..255 }
+      validates :name, :format => { :with => /^([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])(\.([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]{0,61}[a-zA-Z0-9]))*$/ }
+      validates :name, :presence => true
+      validates :name, :uniqueness => true
+      
+      def has_assets?
+        self.assets.empty? == false
+      end
+      
+      def permissions(user)
+        return [:full_control,:read,:write,:read_acl,:write_acl] if self.user.id == user.id
+        
+        a = self.acls.where(:user_id == user.id)
+        a.map {|acl| acl.permission.to_sym}
+      end
+      
+      def create_acl!(user, acl)
+        a = Acl.new(:user_id => user.id, :bucket_id => self.id, :permission => acl)
+        unless a.save
+          # How to handle this
+        end
+      end
+      
+      def destroy_if_empty
+        if self.has_assets?
+          ## Ho to handle this
+        end
+        self.destroy
+      end
+      
+      def remove_acls(user_id)
+        a = self.acls.where(:user_id => user_id)
+        a.each do |acl|
+          acl.destroy
+        end
+      end
+      
+      def add_acls(user_id, permissions)
+        permissions.each do |permission|
+          acl = self.acls.new(:user_id => user_id, :permission => permission)
+          acl.save
+        end
+      end
+      
+      def common_prefixes(args = {})
+        unless args.include_only?( :prefix, :delimiter )
+          raise "Invalid parameters in find_filtered"
+        end
+        prefix = args.has_key?(:prefix) ? args[:prefix] : nil
+        delimiter = args.has_key?(:delimiter) ? args[:delimiter] : nil
+        
+        prefixes = []
+        asset_list = find_filtered_assets(:delimiter => delimiter, :prefix => prefix, :base_only => false)
+        asset_list.each do |asset|
+          dir = asset.dirname(delimiter,prefix)
+          prefixes << dir if !dir.nil?
+        end
+        
+        prefixes.inject([]) do |arr,dir|
+          path = prefix + dir unless prefix.nil?
+          path ||= dir
+          arr << path unless arr.include?(path)
+          arr
+        end
+      end
+      
+      def find_filtered_assets(args = {})
+        unless args.include_only?( :max_keys, :prefix, :marker, :base_only, :delimiter )
+          raise "Invalid parameters in find_filtered"
+        end
+
+        base_only = args.has_key?(:base_only) ? args[:base_only] : true
+        prefix = args.has_key?(:prefix) ? args[:prefix] : nil
+        delimiter = args.has_key?(:delimiter) ? args[:delimiter] : '/'
+        marker = args.has_key?(:marker) ? args[:marker] : nil
+        max_keys = args.has_key?(:max_keys) ? args[:max_keys] : SMOKE_CONFIG['default_max_keys']
+
+        if prefix.nil?
+          asset_list = Asset.find(:all, :conditions => ["bucket_id = ?", self.id])
+        else
+          asset_list = Asset.find(:all, :conditions => ["bucket_id = ? AND key LIKE ?", self.id, "#{prefix}%"])
+        end
+
+        if base_only
+          asset_list = asset_list.inject([]) do |arr,asset|
+            base = asset.basename(delimiter,prefix)
+            # puts "BASE: " + base unless base.nil?
+            arr << asset unless base.nil? 
+            arr
+          end
+        end
+
+        unless marker.nil?
+          asset_list = asset_list.inject([]) do |arr,asset|
+            base = asset.basename(delimiter,prefix)
+            arr << asset if !base.nil? && base > marker
+            arr
+          end
+        end
+        
+        self.truncated = true if asset_list.length > max_keys.to_i
+        asset_list = asset_list[0..max_keys.to_i]
+      end
+      
+      class << self
+        def find_all_through_acl(user)
+          acls = Acl.where(:user_id => user.id)
+          acls.map { |acl| acl.bucket }
+        end
+      end
+      
+    end
+  end
+end

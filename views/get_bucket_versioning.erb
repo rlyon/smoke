@@ -1,0 +1,11 @@
+<% if @bucket.is_versioning.nil? %>
+<VersioningConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/"/>
+<% else %>
+<VersioningConfiguration xmlns="http://s3.amazonaws.com/doc/2006-03-01/">
+	<% if @bucket.is_versioning? %>
+		<Status>Enabled</Status>
+	<% else %>
+		<Status>Suspended</Status>
+	<% end %>
+</VersioningConfiguration>
+<% end %>

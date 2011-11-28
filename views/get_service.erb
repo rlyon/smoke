@@ -1,0 +1,14 @@
+<ListAllMyBucketResult xmlns="http://doc.s3.amazonaws.com/2006-03-01">
+  <Owner>
+    <ID><%= @user.access_id %></ID>
+    <DisplayName><%= @user.display_name %></DisplayName>
+  </Owner>
+  <Buckets>
+	<% @buckets.each do |bucket| %>
+    <Bucket>
+      <Name><%= bucket.name %></Name>
+      <CreationDate><%= bucket.created_at.to_z %></CreationDate>
+    </Bucket>
+	<% end %>
+  </Buckets>
+</ListAllMyBucketResult>
