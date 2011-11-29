@@ -1,10 +1,13 @@
 module Smoke
   module Server
     class User < ActiveRecord::Base
+      attr_accessor :password
+      
       has_many :buckets, :dependent => :destroy
       has_many :acls, :dependent => :destroy
       has_many :assets, :dependent => :destroy
       
+      before_save :encrypt_password
       after_save :create_default_buckets
       
       validates :access_id, :presence => true
@@ -27,6 +30,8 @@ module Smoke
       validates :email, :format => { :with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i }
       validates :email, :uniqueness => true
       
+      validates :password, :presence => true, :on => :create
+      
       # The object have a permissions method, and acl must be a symbol representation of the permission
       def has_permission_to( acl, obj )
         obj.permissions(self).include? acl
@@ -42,8 +47,40 @@ module Smoke
         shared_buckets.each { |bucket| buckets << bucket }
         buckets.sort! { |a,b| a.name <=> b.name }
       end
+      
+      def password_salt
+        self.enc_password.split(':').first
+      end
+      
+      def password_hash
+        self.enc_password.split(':').last
+      end
+      
+      class << self
+        def authenticate(identity, password)
+          if identity =~ /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i
+            user = find_by_email(identity)
+          else
+            user = find_by_username(identity)
+          end
+          
+          if user && user.password_hash == BCrypt::Engine.hash_secret(password, user.password_salt)
+            user
+          else
+            nil
+          end
+        end
+      end
 
       private
+      def encrypt_password
+        if password.present?
+          salt = BCrypt::Engine.generate_salt
+          hash = BCrypt::Engine.hash_secret(password, salt)
+          self.enc_password = "#{salt}:#{hash}"
+        end
+      end
+      
       def create_default_buckets
         bucket = self.buckets.new(:name => self.username)
         bucket.save!

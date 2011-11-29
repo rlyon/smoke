@@ -4,6 +4,7 @@ require 'yaml'
 require 'active_record'
 require 'base64'
 require 'openssl'
+require 'bcrypt'
 
 $:.unshift(File.dirname(__FILE__))
 require 'support/datetime'

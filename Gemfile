@@ -5,6 +5,7 @@ gem 'nokogiri'
 gem 'activerecord'
 gem 'yard'
 gem 'thin'
+gem 'bcrypt-ruby'
 
 # For AWS
 gem 'mime-types'

@@ -123,6 +123,7 @@ namespace :db do
                             :expires_at => Time.now.to_i + (60*60*24*28), 
                             :secret_key => "uV3F3YluFJax1cknvbcGwgjvx4QpvB+leU8dUj2o",
                             :username => "mocky",
+                            :password => "mysecretpassword",
                             :display_name => "Mocky User",
                             :email => "mocky@dev.null.com",
                             :role => "admin")
@@ -132,6 +133,7 @@ namespace :db do
                             :expires_at => Time.now.to_i + (60*60*24*28), 
                             :secret_key => "uV3F3YluFJax1cknvbcGwgjvx4QpvB+leU8dUj2p",
                             :username => "bocky",
+                            :password => "mysecretpassword",
                             :display_name => "Bocky User",
                             :email => "bocky@dev.null.com")
     second_user.save!
@@ -152,6 +154,6 @@ end
 
 task :environment do
   env = ENV['SMOKE_ENV'] ? ENV['SMOKE_ENV'] : "development"
-  SMOKE_CONFIG = YAML::load(File.open('config/smoke.yml'))[env]
+  SMOKE_CONFIG = YAML::load(File.open('config/settings/server.yml'))[env]
   ActiveRecord::Base.establish_connection(YAML::load(File.open('config/database.yml'))[env])
 end
