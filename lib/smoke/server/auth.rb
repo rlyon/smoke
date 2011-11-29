@@ -150,7 +150,7 @@ module Smoke
         
         def credentials
           unless params.has_key?('AWSAccessKeyId')
-            @credentials ||= env['HTTP_AUTHORIZATION'].split[1].split(/:/,2) # unless env['HTTP_AUTHORIZATION'].nil?
+            @credentials ||= env['HTTP_AUTHORIZATION'].split[1].split(/:/,2) unless env['HTTP_AUTHORIZATION'].nil?
           else
             @credentials ||= [params['AWSAccessKeyId'],params['Signature']]
           end
