@@ -6,6 +6,7 @@ $:.unshift(File.dirname(__FILE__))
 require 'support/datetime'
 require 'support/hash'
 require 'support/string'
+require 'support/signature'
 
 require 'helpers/session'
 

@@ -10,6 +10,7 @@ $:.unshift(File.dirname(__FILE__))
 require 'support/datetime'
 require 'support/hash'
 require 'support/string'
+require 'support/signature'
 
 require 'helpers/response'
 
@@ -17,7 +18,6 @@ require 'server/acl'
 require 'server/asset'
 require 'server/auth'
 require 'server/bucket'
-require 'server/signature'
 require 'server/user'
 require 'server/version'
 require 'server/xml_parser'

@@ -9,10 +9,13 @@ module Smoke
       
       def call(env)
         request = Request.new(env)
-        # pp request
+        pp request
         # Assign the request ID that will be used throughout the transaction    
         request.env['smoke.request_id'] = String.hex :length => 32
         request.env['smoke.request_token'] = String.random :length => 48
+        
+        # Bypass signature for https password authentication in post
+        return @app.call(env) if env['REQUEST_METHOD'] == "POST" && env['REQUEST_PATH'] == "/"
         
         # I should use a regex to handle all finle that a browser expects
         return [404,{},[]] if env['REQUEST_PATH'] == "/favicon.ico"
@@ -86,17 +89,17 @@ module Smoke
         end
         
         def valid?
-          s = Signature.new(self)
-          s.user = env['smoke.user']
-          s.method = env['REQUEST_METHOD']
-          s.content_md5 = env['HTTP_CONTENT_MD5'] || ""
-          s.content_type = env['CONTENT_TYPE'] || ""
-          s.bucket = env['smoke.bucket']
-          s.path = env['smoke.path']
-          s.date = amz_date
-          s.resources = params # env['smoke.resource_headers']
-          s.amz_headers = env['smoke.amz_headers']
-          s.expires = params['Expires'] if params.has_key?('Expires')
+          s = Signature.new( env['smoke.user'].secret_key,
+            :method => env['REQUEST_METHOD'],
+            :md5 => env['HTTP_CONTENT_MD5'] || nil,
+            :type => env['CONTENT_TYPE'] || "",
+            :bucket => env['smoke.bucket'],
+            :path => env['smoke.path'],
+            :date => amz_date,
+            :params => params,
+            :amz_headers => env['smoke.amz_headers'],
+            :expires => params['Expires'] || nil,
+          )
           s.sign == signature
         end
         

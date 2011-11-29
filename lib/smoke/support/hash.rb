@@ -14,4 +14,12 @@ class Hash
     end
     return true
   end
+  
+  def include_only(*args)
+    self.each do |key,value|
+      unless args.include?(key)
+        raise "Unknown Argument"
+      end
+    end
+  end
 end

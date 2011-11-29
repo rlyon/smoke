@@ -10,9 +10,6 @@ module Smoke
         if params.has_key?('user')
           # show user details if user is admin or self
           respond_error(:NotImplemented)
-        elsif params.has_key?('auth')
-          # show user details if user is admin or self
-          respond_error(:NotImplemented)
         elsif params.has_key?('users')
           # show all user details if user is admin
           respond_error(:NotImplemented)
@@ -31,6 +28,15 @@ module Smoke
         # The only puts you can do on the service is updating/adding a user
         else
           respond_error(:InvalidRequest)
+        end
+      end
+      
+      post '/' do
+        @user = User.authenticate(params[:username],params[:password])
+        if @user
+          erb :user
+        else
+          respond_error(:AccessDenied)
         end
       end
       
