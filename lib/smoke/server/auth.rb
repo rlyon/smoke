@@ -157,7 +157,7 @@ module Smoke
         end
         
         def access_id
-          pp credentials
+          # pp credentials
           credentials.first
         end
         

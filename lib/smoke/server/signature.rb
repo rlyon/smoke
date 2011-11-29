@@ -22,7 +22,7 @@ module Smoke
         end
         string_to_sign << cannonicalized_amz_headers
         string_to_sign << cannonicalized_resources
-        puts "StringToSign: " + string_to_sign  
+        # puts "StringToSign: " + string_to_sign  
         digest = OpenSSL::Digest::Digest.new('sha1')
         signed_string = OpenSSL::HMAC.digest(digest, @user.secret_key, string_to_sign)
         @signature = Base64.encode64(signed_string).chomp!
