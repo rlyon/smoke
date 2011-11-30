@@ -61,10 +61,12 @@ module Smoke
         
         if params.has_key?('versioning')
           erb :get_bucket_versioning
-          
+        
+        # Returns the bucket wide access control list  
         elsif params.has_key?('acl')
+          @obj = @bucket
           @acls = @bucket.acls
-          erb :get_bucket_acl
+          erb :get_access_control_list
           
         # Returns the payment configuration.  Currently not used.
         elsif params.has_key?('requestPayment')
@@ -115,7 +117,9 @@ module Smoke
           respond_error(:NotImplemented)
         # Sets acls for the bucket
         elsif params.has_key?('acl')
-          respond_error(:NotImplemented)
+           @obj = @asset
+           @acls = @asset.acls
+           erb :get_access_control_list
         else
           respond_error(:AccessDenied) unless @asset.permissions(@user).include? :read
           etag @asset.etag

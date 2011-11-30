@@ -1,13 +1,13 @@
 <AccessControlPolicy xmlns="http://doc.s3.amazonaws.com/2006-03-01">
 	<Owner>
-		<ID><%= @bucket.user.access_id %></ID>
-		<DisplayName><%= @bucket.user.display_name %></DisplayName>
+		<ID><%= @obj.user.access_id %></ID>
+		<DisplayName><%= @obj.user.display_name %></DisplayName>
 	</Owner>
 	<AccessControlList>
 		<Grant>
 			<Grantee xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="CanonicalUser">
-				<ID><%= @bucket.user.access_id %></ID>
-				<DisplayName><%= @bucket.user.email %></DisplayName>
+				<ID><%= @obj.user.access_id %></ID>
+				<DisplayName><%= @obj.user.email %></DisplayName>
 			</Grantee>
 			<Permission>FULL_CONTROL</Permission>
 		</Grant>
