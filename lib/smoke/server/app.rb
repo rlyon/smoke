@@ -5,13 +5,16 @@ module Smoke
       
       set :views, [File.dirname(__FILE__) + '/../../../views']
       
-      # Get service
+      # Get service.  Implements the standard S3 Get Service command and is
+      # extended to handle listing user(s) attributes for external interfaces.
+      # This will be also be used for a directory style lookup to search for users
+      # to share with.
       get '/' do
         if params.has_key?('user')
           # show user details if user is admin or self
           respond_error(:NotImplemented)
         elsif params.has_key?('users')
-          # show all user details if user is admin
+          # show all user details if user is admin or has allowed directory lookup
           respond_error(:NotImplemented)
         else
           @user = request.env['smoke.user']
@@ -20,7 +23,10 @@ module Smoke
         end
       end
       
-      # Put service
+      # Put service to update user attributes or create a user if that user does
+      # not already exist.  Users will have the ability to update their own profiles 
+      # and attributes and administrators will have the ability to create new users
+      # and modify other users. 
       put '/' do
         if params.has_key?('user')
           # update user details if user is admin or self, create if admin
@@ -31,6 +37,10 @@ module Smoke
         end
       end
       
+      # Initial authentication service used for administrative services, user updating
+      # and creation.  Basically, this post allows an external interface to authenticate
+      # via [username/email] and a standard password and returns the access ID and 
+      # key back so all requests can include the standard auth headers
       post '/' do
         @user = User.authenticate(params[:username],params[:password])
         if @user
