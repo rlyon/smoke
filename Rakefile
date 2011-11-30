@@ -1,5 +1,5 @@
 #require "bundler/gem_tasks"
-require 'rake/testtask'
+require 'rspec/core/rake_task'
 require 'active_record'
 require 'yard'
 require File.dirname(__FILE__) + '/lib/smoke/server'
@@ -22,15 +22,11 @@ task :garden => :yard do
   sh 'dot -Tpng doc/images/smoke.dot -o doc/images/smoke.png'
 end
 
+desc "Run the specs"
 namespace :test do
-  Rake::TestTask.new(:unit) do |test|
-    test.pattern = 'test/unit/*_test.rb'
-    test.verbose = true
-  end
-  
-  Rake::TestTask.new(:integration) do |test|
-    test.pattern = 'test/integration/*_test.rb'
-    test.verbose = true
+  RSpec::Core::RakeTask.new(:spec) do |t|
+    t.rspec_opts = %w{--colour --format progress}
+    t.pattern = 'spec/web/*_spec.rb'
   end
 end
 
