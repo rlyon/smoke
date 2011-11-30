@@ -47,7 +47,6 @@ module Smoke
         save
       end
         
-
       def write(data, type)
         full_path = "#{SMOKE_CONFIG['filepath']}/#{self.bucket.name}/#{self.key}"
         dir = full_path.split('/')[0..-2].join('/')
@@ -99,6 +98,7 @@ module Smoke
         return [:full_control,:read,:write,:read_acl,:write_acl] if self.bucket.user.id == user.id
         
         a = self.acls.where(:user_id == user.id)
+        a << self.bucket.acls.where(:user_id == user.id)
         a.map {|acl| acl.permission.to_sym}
       end
       
