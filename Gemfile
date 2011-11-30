@@ -6,6 +6,7 @@ gem 'activerecord'
 gem 'yard'
 gem 'thin'
 gem 'bcrypt-ruby'
+gem 'typhoeus'
 
 # For AWS
 gem 'mime-types'

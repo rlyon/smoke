@@ -5,3 +5,7 @@
 <p>
 	<a href="/logout">Logout</a>
 </p>
+
+<% @buckets.each do |bucket| %>
+	<p><%= bucket.name %></p>
+<% end %>

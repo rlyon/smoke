@@ -14,7 +14,27 @@ module Smoke
       
       get '/' do
         if session?
-          @username = session[:username]
+          @date = Time.now.to_web
+          @username = session['username']
+          auth = Signature.new( session['secret_key'],
+            :method => "GET",
+            :path => "/",
+            :amz_headers => { 'x-amz-date' => [@date] }
+          )
+          response = Typhoeus::Request.get("http://localhost:9292", 
+            :headers => {
+              'Authorization' => "AWS #{session['access_id']}:#{auth}",
+              'x-amz-date' => @date
+            }
+          )
+          pp response.body
+          buckets_hash = Hash.from_xml_string(response.body)
+          pp buckets_hash
+          if response.code == 200
+            @buckets = Bucket.load(response.body)
+          else
+            @buckets = []
+          end
           erb :dashboard
         else
       	  erb :index
@@ -31,15 +51,23 @@ module Smoke
       end
       
       post '/login' do
-        if params[:username] == "mocky" && params[:password] == "1rcmocky"
-          logger.info("LOGIN: attempt for #{params[:username]} using password '%%%%%%%%%%'")
+        logger.info("LOGIN: attempt for #{params[:identity]} using password '%%%%%%%%%%'")
+        response = Typhoeus::Request.post("http://localhost:9292", 
+          :params => {:username => params[:username], :password => params[:password]}, 
+          :headers => {:accept => "application/xml"}
+        )
+        
+        if response.code == 200
+          user = Hash.from_xml_string(response.body)[:user_result]
           session_start!
-          session['username'] = params[:username]
-          session['access_key'] = '0PN5J17HBGZHT7JJ3X82'
-          session['secret_key'] = 'uV3F3YluFJax1cknvbcGwgjvx4QpvB+leU8dUj2o'
-          logger.info("LOGIN: New session opened for #{session['username']}")
-          redirect '/' + 'mocky'
+          session['username'] = user[:username]
+          session['email'] = user[:email]
+          session['access_id'] = user[:access_id]
+          session['secret_key'] = user[:secret_key]
+          logger.info("LOGIN: New session opened for #{user[:username]}")
+          redirect '/' + user[:username]
         else
+          error = Hash.from_xml_string(response.body)[:error]
           redirect '/login'
         end
       end

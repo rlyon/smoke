@@ -14,7 +14,7 @@ module Smoke
       @content_type = options[:type] || ""
       @bucket = options[:bucket] || ""
       @path = options[:path] || "/"
-      @date = options[:date] || DateTime.now.to_z
+      @date = options[:date] || Time.now.to_web
       @amz_headers = options[:amz_headers] || {}
       @params = options[:params] || {}
       @expires = options[:expires] || nil
@@ -37,7 +37,7 @@ module Smoke
       end
       string_to_sign << cannonicalized_amz_headers
       string_to_sign << cannonicalized_resources
-      # puts "StringToSign: " + string_to_sign  
+      puts "StringToSign: " + string_to_sign  
       digest = OpenSSL::Digest::Digest.new('sha1')
       signed_string = OpenSSL::HMAC.digest(digest, @secret_key, string_to_sign)
       @signature = Base64.encode64(signed_string).chomp!

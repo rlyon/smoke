@@ -1,6 +1,6 @@
 module Smoke
-  module Server
-    class Model
+  module Web
+    class XMLModel
       attr_reader :attributes
       
       def initialize( attributes = {} )
@@ -21,6 +21,24 @@ module Smoke
           else
             raise "Unknown Attribute (#{key})"
           end
+        end
+      end
+      
+      class << self
+        def load(xml)
+          id = self.to_s.split('::').last
+          doc = Nokogiri::XML(xml)
+
+          results = []
+          doc.search(id).each do |element|
+            tags = {}
+            element.children.each do |child|
+              tags[child.name.uncamelize.to_sym] = child.text if child.element?
+            end
+            results << self.new(tags) 
+          end
+          pp results
+          results
         end
       end
     end
