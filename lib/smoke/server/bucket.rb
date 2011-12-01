@@ -29,6 +29,18 @@ module Smoke
       validates :name, :presence => true
       validates :name, :uniqueness => true
       
+      def assign_acls(acl_arr)
+        acl_arr.each do |acl|
+          acl.bucket_id = self.id
+          acl.save!
+        end
+      end
+      
+      def assign_acl(acl)
+        acl.bucket_id = self.id
+        acl.save!
+      end
+      
       def has_assets?
         self.assets.empty? == false
       end
@@ -61,11 +73,8 @@ module Smoke
         end
       end
       
-      def add_acls(user_id, permissions)
-        permissions.each do |permission|
-          acl = self.acls.new(:user_id => user_id, :permission => permission)
-          acl.save
-        end
+      def remove_acls
+        self.acls.delete_all
       end
       
       def common_prefixes(args = {})
@@ -111,7 +120,7 @@ module Smoke
           asset_list = asset_list.inject([]) do |arr,asset|
             base = asset.basename(delimiter,prefix)
             # puts "BASE: " + base unless base.nil?
-            arr << asset unless base.nil? 
+            arr << asset unless base.nil?
             arr
           end
         end

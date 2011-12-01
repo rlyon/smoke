@@ -132,32 +132,23 @@ module Smoke
       put '/:bucket/?' do |bucket|
         bucket_already_exists = false
         @user = request.env['smoke.user']
+        @bucket = Bucket.find_by_name(bucket)
+        respond_error(:NoSuchBucket) if @bucket.nil?
         
         # Sets versioning for the bucket
         if params.has_key?('versioning')
           respond_error(:NotImplemented)
         # Sets acls for the bucket
         elsif params.has_key?('acl')
-          @bucket = Bucket.find_by_name(bucket)
-          unless @bucket.permissions(@user).include? :write_acl
-            error = Error.new(request.env, :AccessDenied)
-            response = error.respond
-            halt response['status'], response['header'], response['body']
-          end
-          
-          parser = XmlParser.new(request.body)
-          grants = parser.parse_grants
-          unless grants.nil?
-            grants.each do |key,permissions|
-              @bucket.remove_acls(key)
-              @bucket.add_acls(key,permissions)
+          respond_error(:AccessDenied) unless @user.has_permission_to :write_acl, @bucket
+          begin
+            Acl.from_xml(request.body, @bucket) do |acl|
+              acl.save!
             end
-            respond_ok
-          else
-            response = Error.new(request.env, parser.errors.first[:key]).respond
-            halt response['status'], response['header'], response['body']
+          rescue Smoke::Server::S3Exception => e
+            respond_error(e.key)
           end
-          
+          respond_ok
         # Returns the payment configuration.  Currently not used.
         elsif params.has_key?('requestPayment')
           respond_error(:NotImplemented)
@@ -230,9 +221,19 @@ module Smoke
         log_access(:PUT, @user, @bucket)
         
         if params.has_key?('acl')
-          respond_error(:NotImplemented)
+          @asset = @bucket.assets.find_by_key(asset)
+          respond_error(:NoSuchKey) if @asset.nil?
+          respond_error(:AccessDenied) unless @user.has_permission_to :write_acl, @asset
+          begin
+            Acl.from_xml(request.body, @asset) do |acl|
+              acl.save!
+            end
+          rescue Smoke::Server::S3Exception => e
+            respond_error(e.key)
+          end
+          respond_ok
         else
-          respond_error(:AccessDenied) unless @bucket.permissions(@user).include? :write
+          respond_error(:AccessDenied) unless @user.has_permission_to :write_acl, @bucket
           @amz = env['smoke.amz_headers']
           @directive = @amz['x-amz-metadata-directive']
           

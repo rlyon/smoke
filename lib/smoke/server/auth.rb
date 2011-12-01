@@ -9,7 +9,6 @@ module Smoke
       
       def call(env)
         request = Request.new(env)
-        pp request
         # Assign the request ID that will be used throughout the transaction    
         request.env['smoke.request_id'] = String.hex :length => 32
         request.env['smoke.request_token'] = String.random :length => 48
@@ -24,7 +23,7 @@ module Smoke
         request.find_user
         return error(env, :NotSignedUp) unless request.has_user?
         return error(env, :AccountProblem) unless request.env['smoke.user'].is_active?
-        
+        pp request
         if request.valid?
           return @app.call(env)
         else

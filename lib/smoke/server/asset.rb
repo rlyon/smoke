@@ -18,6 +18,14 @@ module Smoke
       before_save :convert_path_to_key
       before_destroy :unlink_file
       
+      # scope :without_marked_for_delete, where(:delete_marker => false)
+      # scope :without_placeholder_directory, find(:all, :conditions => "content_type != 'application/x-directory'")
+      # scope :placeholder_directories, where(:content_type => "application/x-directory")
+      
+      def remove_acls
+        self.acls.delete_all
+      end
+      
       def filename
         self.key.split('/').last
       end
@@ -29,6 +37,10 @@ module Smoke
       
       def is_placeholder_directory?
         self.content_type == "application/x-directory"
+      end
+      
+      def revert_to_placeholder
+        
       end
       
       def remove_placeholders
@@ -146,6 +158,8 @@ module Smoke
         arr = prefix.split(delimiter)
         if arr.length > 1
           arr[0] + delimiter
+        elsif arr.length == 1 && is_placeholder_directory?
+          arr[0] + delimiter
         else
           nil
         end
@@ -159,6 +173,8 @@ module Smoke
       # key 'path/to/my/image.jpg'.
       #
       def basename(delimiter = '/', start = nil)
+        return nil if is_placeholder_directory? 
+        
         prefix = self.key
         unless start.nil?
           prefix = prefix.gsub(start,'')

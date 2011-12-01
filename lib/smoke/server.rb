@@ -15,6 +15,7 @@ require 'support/number'
 
 require 'helpers/response'
 
+require 'server/exception'
 require 'server/acl'
 require 'server/asset'
 require 'server/auth'
