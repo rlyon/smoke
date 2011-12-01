@@ -80,6 +80,8 @@ namespace :db do
         table.column :path, :string, :default => nil
         table.column :content_type, :string, :default => "application/octet-stream"
         table.column :locked, :boolean, :default => false
+        table.column :delete_marker, :boolean, :default => false
+        table.column :delete_at, :datetime, :default => nil
         table.timestamps
       end
       

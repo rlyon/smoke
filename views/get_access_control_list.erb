@@ -11,7 +11,7 @@
 			</Grantee>
 			<Permission>FULL_CONTROL</Permission>
 		</Grant>
-		<% @acls.each do |grant| %>
+		<% (@acls.sort! {|x,y| x.user.email <=> y.user.email}).each do |grant| %>
 		<Grant>
 			<Grantee xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="CanonicalUser">
 				<ID><%= grant.user.access_id %></ID>

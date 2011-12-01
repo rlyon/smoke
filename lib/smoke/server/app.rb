@@ -119,6 +119,7 @@ module Smoke
         elsif params.has_key?('acl')
            @obj = @asset
            @acls = @asset.acls
+           @acls << @asset.bucket.acls
            erb :get_access_control_list
         else
           respond_error(:AccessDenied) unless @asset.permissions(@user).include? :read
@@ -128,7 +129,7 @@ module Smoke
       end
       
       # Put operations on the bucket
-      put '/:bucket/' do |bucket|
+      put '/:bucket/?' do |bucket|
         bucket_already_exists = false
         @user = request.env['smoke.user']
         
@@ -205,11 +206,26 @@ module Smoke
         end 
       end
       
+      # This may end up being a special case used to create application/x-directory
+      # objects.  Assets already handles this in the write method.
+      put '/:bucket/*/' do |bucket,asset|
+        @user = request.env['smoke.user']
+        @bucket = Bucket.find_by_name(bucket)
+        respond_error(:NoSuchBucket) if @bucket.nil?
+        log_access(:PUT, @user, @bucket)
+        
+        respond_error(:AccessDenied) unless @bucket.permissions(@user).include? :write
+        @asset = @bucket.find_or_create_asset_by_key(asset)
+        @asset.lock
+        @asset.write("", "application/x-directory")
+        @asset.unlock
+        respond_ok(nil,{:etag => @asset.etag})
+      end
+      
       # Put operations on objects(assets)
       put '/:bucket/*' do |bucket,asset|
         @user = request.env['smoke.user']
         @bucket = Bucket.find_by_name(bucket)
-        
         respond_error(:NoSuchBucket) if @bucket.nil?
         log_access(:PUT, @user, @bucket)
         
@@ -217,14 +233,40 @@ module Smoke
           respond_error(:NotImplemented)
         else
           respond_error(:AccessDenied) unless @bucket.permissions(@user).include? :write
-          @asset = @bucket.assets.where(:key => asset).first
-          @asset ||= @bucket.assets.new(:key => asset, :user_id => @user.id)
-          @asset.lock
-          @asset.write(request.body, request.content_type)
-          @asset.unlock
-          respond_ok(nil,{:etag => @asset.etag})
-        end
+          @amz = env['smoke.amz_headers']
+          @directive = @amz['x-amz-metadata-directive']
           
+          # Preform a copy if copy source is defined
+          if !@directive.nil? && @amz['x-amz-copy-source']
+            respond_error(:NotImplemented)
+            # @asset = @bucket.find_or_create_asset_by_key(@amz['x-amz-copy-source'])
+            # @asset.copy(asset)
+          # Otherwise upload the new object
+          else
+            @asset = @bucket.find_or_create_asset_by_key(asset)
+            @asset.lock
+            @asset.write(request.body, request.content_type)
+            @asset.unlock
+            if @asset.is_placeholder_directory?
+              respond_ok
+            else
+              respond_ok(nil,{:etag => @asset.etag})
+            end
+          end
+        end   
+      end
+      
+      delete '/:bucket/*' do |bucket,asset|
+        @user = request.env['smoke.user']
+        @bucket = Bucket.find_by_name(bucket)
+        respond_error(:NoSuchBucket) if @bucket.nil?
+        log_access(:PUT, @user, @bucket)
+        @asset = @bucket.assets.find_by_key(asset)
+        respond_error(:AccessDenied) unless @asset.permissions(@user).include? :write
+        @asset.lock
+        @asset.mark_for_delete
+        @asset.unlock
+        respond_ok
       end
     end
   end

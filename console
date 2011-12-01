@@ -1,4 +1,4 @@
 #!/usr/bin/env ruby
 libs =  " -r irb/completion"
-libs << %( -r "#{File.dirname(__FILE__)}/config/environment/web.rb")
+libs << %( -r "#{File.dirname(__FILE__)}/config/environment/server.rb")
 exec "irb #{libs} --simple-prompt"

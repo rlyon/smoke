@@ -124,8 +124,13 @@ module Smoke
           end
         end
         
-        self.truncated = true if asset_list.length > max_keys.to_i
+        @truncated = true if asset_list.length > max_keys.to_i
         asset_list = asset_list[0..max_keys.to_i]
+      end
+
+      def find_or_create_asset_by_key(key)
+        asset = self.assets.where(:key => key).first
+        asset ||= self.assets.new(:key => key, :user_id => self.user.id)
       end
       
       class << self
