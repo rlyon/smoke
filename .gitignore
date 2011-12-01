@@ -1,4 +1,4 @@
-db/*.sqlite3
+db/
 logs/
 tmp/
 config/thin.web.yml
