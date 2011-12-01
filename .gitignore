@@ -1,5 +1,5 @@
-db/
-logs/
-tmp/
+db/*
+logs/*
+tmp/*
 config/thin.web.yml
 config/thin.server.yml
