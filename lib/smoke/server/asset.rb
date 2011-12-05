@@ -103,7 +103,7 @@ module Smoke
         # return [:full_control,:read,:write,:read_acl,:write_acl] if self.bucket.user.id == user.id
         
         a = self.acls.where(:user_id => user.id)
-        a << self.bucket.acls.where(:user_id => user.id)
+        a.concat(self.bucket.acls.where(:user_id => user.id))
         a.map {|acl| acl.permission.to_sym}
       end
       
