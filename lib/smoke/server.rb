@@ -22,7 +22,6 @@ require 'server/auth'
 require 'server/bucket'
 require 'server/user'
 require 'server/version'
-require 'server/xml_parser'
 
 require 'server/app'
 
