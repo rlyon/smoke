@@ -103,6 +103,8 @@ module Smoke
       
       # Get operations on the object (asset)
       get '/:bucket/*' do |bucket,asset|
+        respond_error(:InvalidArgument) unless params.include_only?('torrent', 'acl', 'bucket', 'splat')
+        
         @user = request.env['smoke.user']
         @bucket = Bucket.find_by_name(bucket)
         
