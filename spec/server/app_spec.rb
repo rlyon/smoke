@@ -17,6 +17,17 @@ describe "App" do
       :email => "mocky@dev.null.com",
       :role => "admin")
     @user.save!
+    @creep = Smoke::Server::User.new(  
+      :access_id => "0PN5J17HBGZHT7JJ3X83", 
+      :expires_at => Time.now.to_i + (60*60*24*28), 
+      :secret_key => "uV3F3YluFJax1cknvbcGwgjvx4QpvB+leU8dUj2o",
+      :username => "creep",
+      :password => "mysecretpassword",
+      :display_name => "Creepy Hacker",
+      :email => "creep@dev.null.com"
+      )
+    @creep.save!
+    
     @bucket ||= @user.buckets.find_by_name(@user.username)
     @file = @bucket.assets.new(:key => "path/to/my/file.txt", :size => 100, :user_id => @user.id)
     @file.save!
@@ -88,6 +99,68 @@ describe "App" do
     cp.length.should == 2
     cp.first['Prefix'].should == 'path/'
     cp.last['Prefix'].should == 'example/'
+  end
+  
+  it "should mark a bucket asset for delete if it exists and user has permissison" do
+    delete '/mocky/path/to/my/file.txt', {}, {'smoke.user' => @user}
+    last_response.should be_ok
+    @bucket.assets.find_by_key('path/to/my/file.txt').marked_for_delete?.should be_true
+  end
+  
+  it "shouldn't mark a bucket asset for delete if it exists and user does not have permissison" do
+    delete '/mocky/path/to/my/file.txt', {}, {'smoke.user' => @creep}
+    last_response.should_not be_ok
+    Hash.from_xml(last_response.body)['Error']['Code'].should == "AccessDenied"
+    @bucket.assets.find_by_key('path/to/my/file.txt').marked_for_delete?.should be_false
+  end
+  
+  it "get asset shouldn't be able to find an invalid key" do
+    get '/mocky/anyfile', {}, {'smoke.user' => @user}
+    last_response.should_not be_ok
+    Hash.from_xml(last_response.body)['Error']['Code'].should == "NoSuchKey"
+  end
+  
+  it "get asset should respond to invalid parameter" do
+    get '/mocky/README', {'mymadeupparam' => nil}, {'smoke.user' => @user}
+    last_response.should_not be_ok
+    Hash.from_xml(last_response.body)['Error']['Code'].should == "InvalidArgument"
+  end
+  
+  ### Check some of the stubs
+  it "get bucket should respond to paramater requestPayment" do
+    get '/mocky/', {'requestPayment' => nil}, {'smoke.user' => @user}
+    last_response.should_not be_ok
+    Hash.from_xml(last_response.body)['Error']['Code'].should == "NotImplemented"
+  end
+  
+  it "get bucket should respond to paramater website" do
+    get '/mocky/', {'website' => nil}, {'smoke.user' => @user}
+    last_response.should_not be_ok
+    Hash.from_xml(last_response.body)['Error']['Code'].should == "NotImplemented"
+  end
+  
+  it "get bucket should respond to paramater location" do
+    get '/mocky/', {'location' => nil}, {'smoke.user' => @user}
+    last_response.should_not be_ok
+    Hash.from_xml(last_response.body)['Error']['Code'].should == "NotImplemented"
+  end
+  
+  it "get bucket should respond to paramater logging" do
+    get '/mocky/', {'logging' => nil}, {'smoke.user' => @user}
+    last_response.should_not be_ok
+    Hash.from_xml(last_response.body)['Error']['Code'].should == "NotImplemented"
+  end
+  
+  it "get bucket should respond to paramater notification" do
+    get '/mocky/', {'notification' => nil}, {'smoke.user' => @user}
+    last_response.should_not be_ok
+    Hash.from_xml(last_response.body)['Error']['Code'].should == "NotImplemented"
+  end
+  
+  it "get asset should respond to paramater torrent" do
+    get '/mocky/README', {'torrent' => nil}, {'smoke.user' => @user}
+    last_response.should_not be_ok
+    Hash.from_xml(last_response.body)['Error']['Code'].should == "NotImplemented"
   end
 
 end

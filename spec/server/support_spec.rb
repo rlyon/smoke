@@ -3,6 +3,7 @@ require File.dirname(__FILE__) + '/spec_helper'
 describe "Hash monkey: include_only?" do
   it "should return true if only the provided keys are found in the hash" do
     h = {:a => 0, :b => 1, :c => 2}
+    {}.include_only?(:a).should be_true
     h.include_only?(:a).should be_false
     h.include_only?(:a, :b).should be_false
     h.include_only?(:a, :b, :c).should be_true
@@ -13,6 +14,7 @@ end
 describe "Hash monkey: include_only" do
   it "shouldn't raise exception if only the provided keys are found in the hash" do
     h = {:a => 0, :b => 1, :c => 3}
+    expect { {}.include_only(:a) }.to_not raise_error
     expect { h.include_only(:a) }.to raise_error
     expect { h.include_only(:a, :b) }.to raise_error
     expect { h.include_only(:a, :b, :c) }.to_not raise_error
