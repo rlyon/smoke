@@ -53,3 +53,50 @@ describe "String monkey: hex" do
   end
   
 end
+
+describe "Fixnum monkey: " do
+  it "days should return n number of days in the future" do
+    Time.stubs(:now).returns(Time.mktime(1970,1,1,0,0,0))
+    10.days.should == Time.mktime(1970,1,11,0,0,0)
+  end
+  
+  it "hours should return n number of hours in the future" do
+    Time.stubs(:now).returns(Time.mktime(1970,1,1,0,0,0))
+    10.hours.should == Time.mktime(1970,1,1,10,0,0)
+  end
+  
+  it "weeks should return n number of weeks in the future" do
+    Time.stubs(:now).returns(Time.mktime(1970,1,1,0,0,0))
+    2.weeks.should == Time.mktime(1970,1,15,0,0,0)
+  end
+  
+  it "months should return n number of months in the future" do
+    Time.stubs(:now).returns(Time.mktime(1970,1,1,0,0,0))
+    15.months.should == Time.mktime(1971,4,1,0,0,0)
+  end
+  
+  it "years should return n number of years in the future" do
+    Time.stubs(:now).returns(Time.mktime(1970,1,1,0,0,0))
+    15.years.should == Time.mktime(1985,1,1,0,0,0)
+  end
+end
+
+describe "Time monkey: " do
+  it "to_z should return the correct value" do
+    # Converts to gmt
+    Time.stubs(:now).returns(Time.mktime(1970,1,1,0,0,0))
+    Time.now.to_z.should == "1970-01-01T08:00:00.000Z"
+  end
+  
+  it "to_web should return the correct value" do
+    # Converts to gmt
+    Time.stubs(:now).returns(Time.mktime(1970,1,1,0,0,0))
+    Time.now.to_web.should == "Thu, 01 Jan 1970 08:00:00 +0000"
+  end
+  
+  it "to_yearmonth should return the correct value" do
+    # Converts to gmt
+    Time.stubs(:now).returns(Time.mktime(1970,1,1,0,0,0))
+    Time.now.to_yearmonth.should == "197001"
+  end
+end

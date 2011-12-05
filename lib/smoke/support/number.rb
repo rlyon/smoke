@@ -11,7 +11,11 @@ class Fixnum
     Time.now + (60 * 60 * 24 * 7 * self)
   end
   
+  def months
+    Time.now.advance(:months => self)
+  end
+  
   def years
-    Time.now + (60 * 60 * 24 * 365 * self)
+    Time.now.advance(:years => self)
   end
 end

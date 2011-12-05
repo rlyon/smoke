@@ -21,4 +21,5 @@ group :developmant, :test do
   gem 'rack-test'
   gem 'awesome_print'
   gem 'simplecov'
+  gem 'mocha'
 end

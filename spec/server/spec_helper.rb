@@ -8,6 +8,11 @@ require 'sinatra'
 require 'rspec'
 require 'rack/test'
 require 'active_record'
+require 'mocha'
+
+RSpec.configure do |config|
+  config.mock_with :mocha
+end
 
 # set test environment
 Sinatra::Base.set :environment, :test

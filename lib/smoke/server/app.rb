@@ -56,7 +56,7 @@ module Smoke
         @bucket = Bucket.find_by_name(bucket)
         
         respond_error(:NoSuchBucket) if @bucket.nil?
-        respond_error(:AccessDenied) unless @bucket.permissions(@user).include? :read
+        respond_error(:AccessDenied) unless @user.has_permission_to :read, @bucket
         log_access(:GET, @user, @bucket)
         
         if params.has_key?('versioning')
