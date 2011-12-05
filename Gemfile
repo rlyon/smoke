@@ -20,4 +20,5 @@ group :developmant, :test do
   gem 'rspec'
   gem 'rack-test'
   gem 'awesome_print'
+  gem 'simplecov'
 end

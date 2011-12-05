@@ -8,7 +8,7 @@ def library_root
   File.dirname(__FILE__)
 end
 
-task :default => :test
+task :default => :spec
 
 desc 'Generate Yard documentation'
 YARD::Rake::YardocTask.new do |t|
@@ -22,15 +22,13 @@ task :garden => :yard do
   sh 'dot -Tpng doc/images/smoke.dot -o doc/images/smoke.png'
 end
 
-desc "Run the specs"
-namespace :test do
-  RSpec::Core::RakeTask.new(:spec) do |t|
-    t.rspec_opts = %w{--colour --format progress}
-    t.pattern = 'spec/web/*_spec.rb'
-  end
+desc "Run all specs"
+RSpec::Core::RakeTask.new(:spec) do |t|
+  t.rspec_opts = %w{--colour --format progress}
+  t.pattern = 'spec/server/*_spec.rb'
 end
 
-def show_test_coverage_results
+task :showcov do
   system("open #{File.join(library_root, 'coverage/index.html')}")
 end
 
@@ -54,7 +52,7 @@ namespace :db do
       create_table :buckets do |table|
         table.column :name, :string, :default => nil
         table.column :is_logging, :boolean, :default => false    
-        table.column :is_versioning, :boolean, :default => true     # nil => never, true => enabled, false => suspended
+        table.column :is_versioning, :boolean, :default => false   # nil => never, true => enabled, false => suspended
         table.column :is_notifying, :boolean, :default => false
         table.column :storage, :string, :default => "local"        # :local or :remote 
         table.column :location, :string, :default => nil           # path or ip address
@@ -77,7 +75,6 @@ namespace :db do
         table.column :etag, :string, :default => nil      # The md5sum
         table.column :user_id, :integer, :default => nil
         table.column :bucket_id, :integer, :default => nil
-        table.column :path, :string, :default => nil
         table.column :content_type, :string, :default => "application/octet-stream"
         table.column :locked, :boolean, :default => false
         table.column :delete_marker, :boolean, :default => false

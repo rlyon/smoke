@@ -14,46 +14,78 @@ module Smoke
       validates :key, :uniqueness => true
       validates :size, :presence => true
       validates :storage_class, :presence => true
+      validates :content_type, :presence => true
       
-      before_save :convert_path_to_key
+      # before_save :convert_path_to_key
       before_destroy :unlink_file
       
-      # scope :without_marked_for_delete, where(:delete_marker => false)
+      scope :not_marked_for_deletion, where(:delete_marker => false)
       # scope :without_placeholder_directory, find(:all, :conditions => "content_type != 'application/x-directory'")
       # scope :placeholder_directories, where(:content_type => "application/x-directory")
+      
+      def path
+        unless self.delete_marker?
+          active_path
+        else
+          trash_path
+        end
+      end
+      
+      def active_path
+        "#{SMOKE_CONFIG['filepath']}/#{self.bucket.name}/#{self.key}"
+      end
+      
+      def trash_path
+        "#{SMOKE_CONFIG['filepath']}/#{self.bucket.name}/.trash/#{self.key}"
+      end
+      
+      def dir
+        unless self.delete_marker?
+          active_dir
+        else
+          trash_dir
+        end
+      end
+      
+      def active_dir
+        "#{SMOKE_CONFIG['filepath']}/#{self.bucket.name}/#{pwd}"
+      end
+      
+      def trash_dir
+        "#{SMOKE_CONFIG['filepath']}/#{self.bucket.name}/.trash/#{pwd}"
+      end
+      
+      def pwd
+        unless is_placeholder_directory?
+          self.key.split('/')[0..-2].join('/') + '/'
+        else
+          self.key
+        end
+      end
+      
+      def filename
+        unless is_placeholder_directory?
+          self.key.split('/').last
+        else
+          nil
+        end
+      end
+      
+      def last_prefix
+        unless is_placeholder_directory?
+          self.key.split('/')[0..-2].last
+        else
+          self.key.split('/').last
+        end
+      end
       
       def remove_acls
         self.acls.delete_all
       end
       
-      def filename
-        self.key.split('/').last
-      end
-      
       def lock
         self.locked = true
-        self.save
-      end
-      
-      def is_placeholder_directory?
-        self.content_type == "application/x-directory"
-      end
-      
-      def revert_to_placeholder
-        
-      end
-      
-      def remove_placeholders
-        self.key.split('/')[0..-1].inject("") do |x,y|
-          x << y + '/'
-          puts "CLEANING: #{x}"
-          asset = Asset.find_by_key(x)
-          unless asset.nil?
-            puts "DESTROYING PLACEHOLDER"
-            asset.destroy if asset.is_placeholder_directory?
-          end
-          x
-        end
+        save
       end
       
       def unlock
@@ -61,85 +93,16 @@ module Smoke
         save
       end
       
-      def append(data)
-        full_path = "#{SMOKE_CONFIG['filepath']}/#{self.bucket.name}/#{self.key}"
-        dir = full_path.split('/')[0..-2].join('/')
-        # Ensure that the directory exists
-        FileUtils.mkpath dir
-
-        File.open(full_path, 'a') do |file|
-          file.write(data)
-        end
-        digest = Digest::MD5.hexdigest(File.read(tempfile)).to_s
-        self.etag = digest 
-        self.size = File.size(full_path)
-        save
-      end
-        
-      def write(data, type)
-        full_path = "#{SMOKE_CONFIG['filepath']}/#{self.bucket.name}/#{self.key}"
-        dir = full_path.split('/')[0..-2].join('/')
-        filename = full_path.split('/').last
-        
-        self.content_type = type
-        self.remove_placeholders
-        
-        unless self.is_placeholder_directory?
-          # Ensure that the directory exists
-          FileUtils.mkpath dir
-          tempfile = "#{dir}/#{filename}.upload"
-          File.open(tempfile, 'wb') do |file|
-            file.write(data.read)
-          end
-          digest = Digest::MD5.hexdigest(File.read(tempfile)).to_s
-        
-          # Don't bother anything if the digest hasn't changed.  Should check
-          # prior to writing the file.
-          unless self.etag == digest
-            # If the file exists, I'm assuming the asset attributes are current...
-            if File.exist?(full_path) && self.bucket.is_versioning?
-              # Create a new version.
-              @version = self.versions.new(
-                :version_string => "#{String.random :length => 32}", 
-                :etag => self.etag,
-                :size => self.size,
-                :content_type => self.content_type
-              )
-              @version.save
-              version_path = "#{dir}/.#{filename}.#{@version.version_string}"
-              # Move the current version before we copy the temp file back.  Really should
-              # have a background process to compress the files to save space.
-              FileUtils.move full_path, version_path
-            end
-            # There's got to be a better way to do this...  I need to rewind so I can get the size
-            # Otherwise it gives me the remaining bytes, which is 0.
-            data.rewind
-            self.etag = digest 
-            self.path = full_path 
-            self.size = data.read.size
-            FileUtils.move tempfile, full_path, :force => true
-          else
-            FileUtils.rm tempfile
-          end
-        else
-          FileUtils.mkpath full_path
-          self.path = full_path 
-          self.size = 0
-        end 
-        save
-      end
-      
-      def mark_for_delete
-        self.delete_marker = true
-        self.delete_at = Time.now.to_i + (60*60*24*30)
+      def is_placeholder_directory?
+        self.content_type == "application/x-directory"
       end
       
       def permissions(user)
         return [:full_control,:read,:write,:read_acl,:write_acl] if self.user.id == user.id
-        return [:full_control,:read,:write,:read_acl,:write_acl] if self.bucket.user.id == user.id
+        # return [:full_control,:read,:write,:read_acl,:write_acl] if self.bucket.user.id == user.id
         
-        a = self.acls.where(:user_id == user.id)
-        a << self.bucket.acls.where(:user_id == user.id)
+        a = self.acls.where(:user_id => user.id)
+        a << self.bucket.acls.where(:user_id => user.id)
         a.map {|acl| acl.permission.to_sym}
       end
       
@@ -187,6 +150,73 @@ module Smoke
           nil
         end
       end
+      
+      def mark_for_delete
+        create_parent_placeholder_if_last
+        self.delete_marker = true
+        self.delete_at = 30.days
+        save
+        trash_files
+      end
+      
+      def append(data)
+        # Ensure that the directory exists
+        FileUtils.mkpath dir
+
+        File.open(path, 'a') do |file|
+          file.write(data)
+        end
+        digest = Digest::MD5.hexdigest(File.read(tempfile)).to_s
+        self.etag = digest 
+        self.size = File.size(path)
+        save
+      end
+        
+      def write(data, type)
+        self.content_type = type
+        remove_parent_placeholers
+        
+        unless self.is_placeholder_directory?
+          # Ensure that the directory exists
+          FileUtils.mkpath dir
+          tempfile = "#{path}.upload"
+          File.open(tempfile, 'wb') do |file|
+            file.write(data.read)
+          end
+          digest = Digest::MD5.hexdigest(File.read(tempfile)).to_s
+        
+          # Don't bother anything if the digest hasn't changed.  Should check
+          # prior to writing the file.
+          unless self.etag == digest
+            # If the file exists, I'm assuming the asset attributes are current...
+            if File.exist?(path) && self.bucket.is_versioning?
+              # Create a new version.
+              @version = self.versions.new(
+                :version_string => "#{String.random :length => 32}", 
+                :etag => self.etag,
+                :size => self.size,
+                :content_type => self.content_type
+              )
+              @version.save
+              # Move the current version before we copy the temp file back.  Really should
+              # have a background process to compress the files to save space.
+              FileUtils.move path, @version.path
+            end
+            # There's got to be a better way to do this...  I need to rewind so I can get the size
+            # Otherwise it gives me the remaining bytes, which is 0.
+            data.rewind
+            self.etag = digest
+            self.size = data.read.size
+            FileUtils.move tempfile, path, :force => true
+          else
+            FileUtils.rm tempfile
+          end
+        else
+          FileUtils.mkpath dir
+          self.size = 0
+        end 
+        save!
+      end
 
     private
       # Makes sure that the key is in ascii format and does not
@@ -199,9 +229,9 @@ module Smoke
       # Removes the physical file associated with the asset 
       def unlink_file
         unless is_placeholder_directory?
-          FileUtils.rm self.path if File.file?(self.path)
+          FileUtils.rm path if File.file?(path)
         else
-          FileUtils.rmdir self.path if Dir.entries(self.path) == [".", ".."]
+          FileUtils.rmdir path if Dir.entries(path) == [".", ".."]
         end
       end
       
@@ -209,16 +239,45 @@ module Smoke
         nil
       end
       
-      def trash_file
-        puts self.inspect
-        trash_path = "#{SMOKE_CONFIG['filepath']}/#{self.bucket.name}/.trash/#{self.key}"
-        dir = trash_path.split('/')[0..-2].join('/')
-        FileUtils.mkpath dir
+      def trash_files
+        FileUtils.mkpath trash_dir
         unless is_placeholder_directory?
-          FileUtils.mv self.path, dir, :force => true if File.file?(self.path)
+          FileUtils.mv active_path, trash_dir, :force => true if File.file?(active_path)
         else
-          FileUtils.rmdir self.path
+          FileUtils.rmdir active_path
           FileUtils.mkdir trash_path
+        end
+        
+        self.versions.each do |version|
+          version.move_to_trash
+        end
+      end
+      
+      def create_parent_placeholder_if_last
+        parent_directory = self.pwd
+        asset_list = Asset.find( :all, 
+          :conditions => [  "bucket_id = ? AND key LIKE ? AND delete_marker = ?", 
+                            self.bucket.id, 
+                            "#{parent_directory}%", 
+                            false]
+        )
+        
+        if asset_list.length == 1 # Its just me left
+          asset = Asset.new(:user_id => self.user_id, :bucket_id => self.bucket_id, :key => parent_directory)
+          asset.write("", "application/x-directory")
+        end
+      end
+      
+      # Probably not the best way to go about this.  There will be too many
+      # calls to the database.  Just a quick and dirty attempt.
+      def remove_parent_placeholers
+        self.key.split('/')[0..-2].inject("") do |x,y|
+          x << y + '/'
+          asset = Asset.find_by_key(x)
+          unless asset.nil?
+            asset.destroy if asset.is_placeholder_directory?
+          end
+          x
         end
       end
       

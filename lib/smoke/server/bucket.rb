@@ -100,7 +100,7 @@ module Smoke
       end
       
       def find_filtered_assets(args = {})
-        unless args.include_only?( :max_keys, :prefix, :marker, :base_only, :delimiter )
+        unless args.include_only?( :max_keys, :prefix, :marker, :base_only, :delimiter, :marked_for_delete )
           raise "Invalid parameters in find_filtered"
         end
 
@@ -109,11 +109,12 @@ module Smoke
         delimiter = args.has_key?(:delimiter) ? args[:delimiter] : '/'
         marker = args.has_key?(:marker) ? args[:marker] : nil
         max_keys = args.has_key?(:max_keys) ? args[:max_keys] : SMOKE_CONFIG['default_max_keys']
+        delete_marker = args.has_key?(:marked_for_delete) ? args[:marked_for_delete] : false
 
         if prefix.nil?
-          asset_list = Asset.find(:all, :conditions => ["bucket_id = ?", self.id])
+          asset_list = Asset.find(:all, :conditions => ["bucket_id = ? AND delete_marker = ?", self.id, delete_marker])
         else
-          asset_list = Asset.find(:all, :conditions => ["bucket_id = ? AND key LIKE ?", self.id, "#{prefix}%"])
+          asset_list = Asset.find(:all, :conditions => ["bucket_id = ? AND delete_marker = ? AND key LIKE ?", self.id, delete_marker, "#{prefix}%"])
         end
 
         if base_only

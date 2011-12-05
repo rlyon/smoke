@@ -31,5 +31,5 @@ test:
     auto_activate: true
     admin_email: admin@mybig.edu
     upload_chunks: 1024
-    filepath: /tmp/smoke
+    filepath: /tmp/test
     trashpath: /tmp/trashcan

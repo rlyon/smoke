@@ -90,10 +90,10 @@ module Smoke
           @prefix = params.has_key?('prefix') ? params['prefix'] : nil
 
           unless @delimited
-            @assets = @bucket.assets
+            @assets = @bucket.assets.not_marked_for_deletion
             @common_prefixes = []
           else
-            @assets = @bucket.find_filtered_assets :prefix => @prefix, :max_keys => @max_keys
+            @assets = @bucket.find_filtered_assets :prefix => @prefix, :max_keys => @max_keys, :marked_for_delete => false
             @common_prefixes = @bucket.common_prefixes :prefix => @prefix, :delimiter => params['delimiter']
           end
           
@@ -263,7 +263,8 @@ module Smoke
         respond_error(:NoSuchBucket) if @bucket.nil?
         log_access(:PUT, @user, @bucket)
         @asset = @bucket.assets.find_by_key(asset)
-        respond_error(:AccessDenied) unless @asset.permissions(@user).include? :write
+        respond_error(:NoSuchKey) if @asset.nil?
+        respond_error(:AccessDenied) unless @user.has_permission_to :write, @asset
         @asset.lock
         @asset.mark_for_delete
         @asset.unlock

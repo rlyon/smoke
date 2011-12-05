@@ -1,5 +1,6 @@
 db/*
 logs/*
 tmp/*
+coverage/*
 config/thin.web.yml
 config/thin.server.yml
