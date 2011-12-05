@@ -4,13 +4,6 @@
 		<DisplayName><%= @obj.user.display_name %></DisplayName>
 	</Owner>
 	<AccessControlList>
-		<Grant>
-			<Grantee xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="CanonicalUser">
-				<ID><%= @obj.user.access_id %></ID>
-				<DisplayName><%= @obj.user.email %></DisplayName>
-			</Grantee>
-			<Permission>FULL_CONTROL</Permission>
-		</Grant>
 		<% (@acls.sort! {|x,y| x.user.email <=> y.user.email}).each do |grant| %>
 		<Grant>
 			<Grantee xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="CanonicalUser">
