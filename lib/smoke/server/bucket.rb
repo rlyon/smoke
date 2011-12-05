@@ -74,7 +74,7 @@ module Smoke
       end
       
       def remove_acls
-        self.acls.delete_all
+        Acl.where(:bucket_id => self.id).delete_all
       end
       
       def common_prefixes(args = {})

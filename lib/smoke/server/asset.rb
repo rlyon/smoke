@@ -81,7 +81,7 @@ module Smoke
       end
       
       def remove_acls
-        self.acls.delete_all
+        Acl.where(:asset_id => self.id).delete_all
       end
       
       def lock
