@@ -310,6 +310,26 @@ describe "Asset" do
     File.open(@version.path).first.should == "Hello, I am file 1.\n"
   end
   
+  it "should adjust the delete marker if the asset to be written to has the delete marker set" do
+    data = File.new(File.dirname(__FILE__) + '/example/FILE1.txt', 'r')
+    @bucket.is_versioning = false
+    @bucket.save!
+    @new_asset = @bucket.find_or_create_asset_by_key("example/FILE1.txt")
+    @new_asset.lock
+    @new_asset.write(data, 'text/plain')
+    @new_asset.unlock
+    
+    @new_asset.mark_for_delete
+    
+    data = File.new(File.dirname(__FILE__) + '/example/FILE1.txt', 'r')
+    @new_asset = @bucket.find_or_create_asset_by_key("example/FILE1.txt")
+    @new_asset.lock
+    @new_asset.write(data, 'text/plain')
+    @new_asset.unlock
+    
+    @new_asset.delete_marker.should be_false
+  end
+  
   it "should return an array of permissions" do
     @file.permissions(@user).should be_a(Array)
   end

@@ -11,7 +11,7 @@ module Smoke
       # should validate the format of the key to only allow [A-Za-z0-9]+ to 
       # start and / as the only delimiter for now
       validates :key, :presence => true
-      validates :key, :uniqueness => true
+      validates :key, :uniqueness => { :scope => :bucket_id }
       validates :size, :presence => true
       validates :storage_class, :presence => true
       validates :content_type, :presence => true
@@ -20,6 +20,7 @@ module Smoke
       before_destroy :unlink_file
       
       scope :not_marked_for_deletion, where(:delete_marker => false)
+      scope :marked_for_deletion, where(:delete_marker => true)
       # scope :without_placeholder_directory, find(:all, :conditions => "content_type != 'application/x-directory'")
       # scope :placeholder_directories, where(:content_type => "application/x-directory")
       
@@ -159,6 +160,10 @@ module Smoke
         trash_files
       end
       
+      def marked_for_delete?
+        self.delete_marker?
+      end
+      
       def append(data)
         # Ensure that the directory exists
         FileUtils.mkpath dir
@@ -175,6 +180,11 @@ module Smoke
       def write(data, type)
         self.content_type = type
         remove_parent_placeholers
+        
+        if marked_for_delete?
+          self.delete_marker = false
+          self.delete_at = nil
+        end
         
         unless self.is_placeholder_directory?
           # Ensure that the directory exists
