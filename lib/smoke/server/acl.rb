@@ -37,7 +37,8 @@ module Smoke
               user = users.first
               acl.user_id = user.id
             when "Group"
-              raise S3Exception.new(:NotImplemented, "Group acl assignments are not yet implemented")
+              # raise S3Exception.new(:NotImplemented, "Group acl assignments are not yet implemented")
+              # silently ignore the request
             else
               raise S3Exception.new(:InternalError, "Unknown grantee type: #{grantee.first.attributes['type'].value}")
             end
