@@ -22,6 +22,7 @@ module Sinatra
       header["x-amz-delete-marker"] = add_headers[:delete_marker] if add_headers.include?(:delete_marker)
       header["Location"] = add_headers[:location] if add_headers.include?(:location)
       header["Last-Modified"] = add_headers[:modified] if add_headers.include?(:modified)
+      header["Size"] = add_headers[:size] if add_headers.include?(:size)
       [200,header,content]
     end
     
