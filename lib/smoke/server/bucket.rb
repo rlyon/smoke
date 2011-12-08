@@ -143,6 +143,31 @@ module Smoke
         asset ||= self.assets.new(:key => key, :user_id => self.user.id)
       end
       
+      def logging_from_xml(xml)
+        l = Hash.from_xml(xml)
+        raise S3Exception.new(:InvalidRequest, 'Logging tags not found.') unless v.has_key?('BucketLoggingStatus')
+        if l.has_key?('LoggingEnabled')
+          self.is_logging = true
+        else
+          self.is_logging = false
+        end
+        save!
+      end
+      
+      def versioning_from_xml(xml)
+        v = Hash.from_xml(xml)
+        raise S3Exception.new(:InvalidRequest, 'Versioning tags not found.') unless v.has_key?('VersioningConfiguration')
+        case v['VersioningConfiguration']['Status']
+        when "Enabled"
+          self.is_versioning = true
+        when "Suspended"
+          self.is_versioning = false
+        else
+          raise S3Exception.new(:InvalidRequest, 'Invalid status received.')
+        end
+        save!
+      end
+      
       class << self
         def find_all_through_acl(user)
           acls = Acl.where(:user_id => user.id)
