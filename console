@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
 libs =  " -r irb/completion"
 libs << %( -r "#{File.dirname(__FILE__)}/config/environment/server.rb")
+libs << %( -r "#{File.dirname(__FILE__)}/lib/smoke/helpers/account_tools.rb")
 exec "irb #{libs} --simple-prompt"
