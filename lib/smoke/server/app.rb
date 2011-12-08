@@ -79,6 +79,8 @@ module Smoke
           respond_error(:NotImplemented)
         # Return the logging status of the bucket.
         elsif params.has_key?('logging')
+          erb :get_bucket_logging
+        elsif params.has_key?('versions')
           respond_error(:NotImplemented)
         # Return the notification status of the bucket.  Not implemented.
         elsif params.has_key?('notification')
@@ -139,7 +141,13 @@ module Smoke
         
         # Sets versioning for the bucket
         if params.has_key?('versioning')
-          respond_error(:NotImplemented)
+          respond_error(:AccessDenied) unless @bucket.permissions(@user).include? :full_control
+          begin
+            @bucket.versioning_from_xml(request.body.read)
+          rescue Smoke::Server::S3Exception => e
+            respond_error(e.key)
+          end
+          respond_ok
         # Sets acls for the bucket
         elsif params.has_key?('acl')
           respond_error(:AccessDenied) unless @user.has_permission_to :write_acl, @bucket
@@ -164,11 +172,9 @@ module Smoke
           respond_error(:NotImplemented)
         # Sets the logging status of the bucket.
         elsif params.has_key?('logging')
-          @bucket = Bucket.find_by_name(bucket)
           respond_error(:AccessDenied) unless @bucket.permissions(@user).include? :full_control
-          @bucket.is_logging = true
-          @bucket.save
-          respond_ok(request.env, :get_bucket_logging)    
+          @bucket.logging_from_xml(request.body.read)
+          respond_ok
         # Return the notification status of the bucket.  Not implemented.
         elsif params.has_key?('notification')
           respond_error(:NotImplemented)

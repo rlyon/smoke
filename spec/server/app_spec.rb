@@ -145,12 +145,6 @@ describe "App" do
     Hash.from_xml(last_response.body)['Error']['Code'].should == "NotImplemented"
   end
   
-  it "get bucket should respond to paramater logging" do
-    get '/mocky/', {'logging' => nil}, {'smoke.user' => @user}
-    last_response.should_not be_ok
-    Hash.from_xml(last_response.body)['Error']['Code'].should == "NotImplemented"
-  end
-  
   it "get bucket should respond to paramater notification" do
     get '/mocky/', {'notification' => nil}, {'smoke.user' => @user}
     last_response.should_not be_ok
