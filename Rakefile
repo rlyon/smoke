@@ -117,8 +117,8 @@ namespace :db do
     first_user = Smoke::Server::User.new(  :access_id => "0PN5J17HBGZHT7JJ3X82", 
                             :expires_at => Time.now.to_i + (60*60*24*28), 
                             :secret_key => "uV3F3YluFJax1cknvbcGwgjvx4QpvB+leU8dUj2o",
-                            :username => "mocky",
-                            :password => "mysecretpassword",
+                            :username => "admin",
+                            :password => "mysupersecretpassword",
                             :display_name => "Mocky User",
                             :email => "mocky@dev.null.com",
                             :role => "admin")

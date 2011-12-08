@@ -8,7 +8,7 @@ module Smoke
       has_many :assets, :dependent => :destroy
       
       before_save :encrypt_password
-      after_save :create_default_buckets
+      after_create :create_default_buckets
       
       validates :access_id, :presence => true
       validates :access_id, :length => { :is => 20 }

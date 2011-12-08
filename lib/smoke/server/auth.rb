@@ -97,7 +97,7 @@ module Smoke
             :date => amz_date,
             :params => params,
             :amz_headers => env['smoke.amz_headers'],
-            :expires => params['Expires'] || nil,
+            :expires => params['Expires'] || nil
           )
           s.sign == signature
         end
