@@ -23,7 +23,7 @@ module Smoke
         request.find_user
         return error(env, :NotSignedUp) unless request.has_user?
         return error(env, :AccountProblem) unless request.env['smoke.user'].is_active?
-        pp request
+        # pp request
         if request.valid?
           return @app.call(env)
         else
