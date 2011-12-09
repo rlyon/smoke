@@ -42,8 +42,10 @@ module Smoke
       end
       
       def all_my_buckets
-        buckets = self.buckets.find(:all)
+        buckets = []
+        owned_buckets = self.buckets.find(:all)
         shared_buckets = Bucket.find_all_through_acl(self)
+        owned_buckets.each { |bucket| buckets << bucket }
         shared_buckets.each { |bucket| buckets << bucket }
         buckets.sort! { |a,b| a.name <=> b.name }
       end
