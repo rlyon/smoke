@@ -103,6 +103,18 @@ module Smoke
         end
       end
       
+      # Give me HEAD!
+      head '/:bucket/*' do |bucket,asset|
+        @user = request.env['smoke.user']
+        @bucket = Bucket.find_by_name(bucket)
+        respond_error(:NoSuchBucket) if @bucket.nil?
+        respond_error(:AccessDenied) unless @bucket.permissions(@user).include? :write
+        @asset = @bucket.assets.where(:key => asset).first
+        respond_error(:NoSuchKey) if @asset.nil?
+        respond_error(:AccessDenied) unless @asset.permissions(@user).include? :read
+        respond_ok(nil,{:etag => @asset.etag, :modified => @asset.updated_at, :size => @asset.size, :content_type => @asset.content_type})
+      end
+      
       # Get operations on the object (asset)
       get '/:bucket/*' do |bucket,asset|
         respond_error(:InvalidArgument) unless params.include_only?('torrent', 'acl', 'bucket', 'splat')
@@ -203,17 +215,6 @@ module Smoke
           end
           respond_ok
         end 
-      end
-      
-      head '/:bucket/*' do |bucket,asset|
-        @user = request.env['smoke.user']
-        @bucket = Bucket.find_by_name(bucket)
-        respond_error(:NoSuchBucket) if @bucket.nil?
-        respond_error(:AccessDenied) unless @bucket.permissions(@user).include? :write
-        @asset = @bucket.assets.where(:key => asset).first
-        respond_error(:NoSuchKey) if @asset.nil?
-        respond_error(:AccessDenied) unless @asset.permissions(@user).include? :read
-        respond_ok(nil,{:etag => @asset.etag, :modified => @asset.updated_at, :size => @asset.size, :content_type => @asset.content_type})
       end
       
       # This may end up being a special case used to create application/x-directory

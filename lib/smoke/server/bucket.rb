@@ -47,16 +47,13 @@ module Smoke
       
       def permissions(user)
         return [:full_control,:read,:write,:read_acl,:write_acl] if self.user.id == user.id
-        
         a = self.acls.where(:user_id == user.id)
         a.map {|acl| acl.permission.to_sym}
       end
       
       def create_acl!(user, acl)
         a = Acl.new(:user_id => user.id, :bucket_id => self.id, :permission => acl)
-        unless a.save
-          # How to handle this
-        end
+        a.save!
       end
       
       def destroy_if_empty

@@ -16,6 +16,18 @@ describe "Asset" do
       :email => "mocky@dev.null.com",
       :role => "admin")
     @user.save!
+    
+    @bocky = Smoke::Server::User.new(
+      :access_id => "0PN5J17HBGZHT7JJ3X83", 
+      :expires_at => Time.now.to_i + (60*60*24*28), 
+      :secret_key => "uV3F3YluFJax1cknvbcGwgjvx4QpvB+leU8dUj2p",
+      :username => "bocky",
+      :password => "mysecretpassword",
+      :display_name => "Bocky User",
+      :email => "bocky@dev.null.com"
+    )
+    @bocky.save!
+    
     @bucket ||= @user.buckets.find_by_name(@user.username)
     @file ||= @bucket.assets.new(:key => "path/to/my/file.txt", :size => 100, :user_id => @user.id)
     @file.save!
