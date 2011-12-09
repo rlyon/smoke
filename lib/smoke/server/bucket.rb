@@ -59,7 +59,7 @@ module Smoke
         a = self.acls.where(:user_id == user.id)
         if a.empty?
           # check to see if there are assets which are available
-          return [:read] unless self.permitted_assets?(user).empty?
+          return [:read] unless self.permitted_assets(user).empty?
         else
           a.map {|acl| acl.permission.to_sym}
         end
