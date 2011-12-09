@@ -43,8 +43,8 @@ describe "User" do
 
   it "all_my_buckets should return all buckets including shared" do
     @bucket.create_acl!(@bocky, "read")
-    @buckets = @bocky.all_my_buckets
-    @buckets.length.should == 3
+    @bocky.all_my_buckets.length.should == 3
+    @user.all_my_buckets.length.should == 2
   end
 
 end 

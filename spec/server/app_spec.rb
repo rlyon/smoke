@@ -77,6 +77,70 @@ describe "App" do
     r['Buckets']['Bucket'].length.should == 2
   end
   
+  it "should respond to / and list all buckets including shared" do
+    @bucket.create_acl!(@bocky, "read")
+    
+    get '/', {}, {'smoke.user' => @bocky}
+    last_response.should be_ok
+    h = Hash.from_xml(last_response.body)
+    h.has_key?('ListAllMyBucketResult').should be_true
+    r = h['ListAllMyBucketResult']
+    r.has_key?('Buckets').should be_true
+    r['Buckets']['Bucket'].length.should == 3
+    
+    get '/', {}, {'smoke.user' => @user}
+    last_response.should be_ok
+    h = Hash.from_xml(last_response.body)
+    h.has_key?('ListAllMyBucketResult').should be_true
+    r = h['ListAllMyBucketResult']
+    r.has_key?('Buckets').should be_true
+    r['Buckets']['Bucket'].length.should == 2
+  end
+  
+  it "should respond to / and list all buckets including shared using the alternate acl assignment" do
+    @acl = Smoke::Server::Acl.new(:user_id => @bocky.id, :permission => "read")
+    @acl.save
+    @bucket.assign_acl(@acl)
+    
+    get '/', {}, {'smoke.user' => @bocky}
+    last_response.should be_ok
+    h = Hash.from_xml(last_response.body)
+    h.has_key?('ListAllMyBucketResult').should be_true
+    r = h['ListAllMyBucketResult']
+    r.has_key?('Buckets').should be_true
+    r['Buckets']['Bucket'].length.should == 3
+    
+    get '/', {}, {'smoke.user' => @user}
+    last_response.should be_ok
+    h = Hash.from_xml(last_response.body)
+    h.has_key?('ListAllMyBucketResult').should be_true
+    r = h['ListAllMyBucketResult']
+    r.has_key?('Buckets').should be_true
+    r['Buckets']['Bucket'].length.should == 2
+  end
+  
+  it "should respond to / and list all buckets including those with shared assets" do
+    @asset = Smoke::Server::Asset.find_by_key('path/to/my/file.txt')
+    @acl = Smoke::Server::Acl.new(:user_id => @bocky.id, :asset_id => @asset.id, :permission => "read")
+    @acl.save
+    
+    get '/', {}, {'smoke.user' => @bocky}
+    last_response.should be_ok
+    h = Hash.from_xml(last_response.body)
+    h.has_key?('ListAllMyBucketResult').should be_true
+    r = h['ListAllMyBucketResult']
+    r.has_key?('Buckets').should be_true
+    r['Buckets']['Bucket'].length.should == 3
+    
+    get '/', {}, {'smoke.user' => @user}
+    last_response.should be_ok
+    h = Hash.from_xml(last_response.body)
+    h.has_key?('ListAllMyBucketResult').should be_true
+    r = h['ListAllMyBucketResult']
+    r.has_key?('Buckets').should be_true
+    r['Buckets']['Bucket'].length.should == 2
+  end
+  
   it "should list all the files when no delimeter is present" do
     get '/mocky/', {}, {'smoke.user' => @user}
     last_response.should be_ok
