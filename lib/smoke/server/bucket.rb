@@ -47,7 +47,7 @@ module Smoke
       end
       
       def has_permitted_assets?(user)
-        !self.assets.acls.where(:user_id => user.id)
+        !self.assets_attributes.where(:user_id => user.id)
       end
       
       def permissions(user)
