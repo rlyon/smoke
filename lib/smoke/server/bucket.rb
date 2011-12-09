@@ -167,13 +167,16 @@ module Smoke
       
       class << self
         def find_all_through_acl(user)
-          acls = Acl.where(:user_id => user.id)
-          acls.map do |acl|
+          acls = Acl.where(:user_id => user.id)          
+          acls.inject([]) do |arr,acl|
+            bucket = nil
             unless acl.bucket.nil?
-              acl.bucket
+              bucket = acl.bucket
             else
-              acl.asset.bucket
+              bucket = acl.asset.bucket
             end
+            arr << bucket unless !bucket.nil? && arr.include?(bucket)
+            arr
           end
         end
       end
