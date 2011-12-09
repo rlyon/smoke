@@ -108,7 +108,7 @@ module Smoke
         @user = request.env['smoke.user']
         @bucket = Bucket.find_by_name(bucket)
         respond_error(:NoSuchBucket) if @bucket.nil?
-        respond_error(:AccessDenied) unless @bucket.permissions(@user).include? :write
+        respond_error(:AccessDenied) unless @bucket.permissions(@user).include? :read
         @asset = @bucket.assets.where(:key => asset).first
         respond_error(:NoSuchKey) if @asset.nil?
         respond_error(:AccessDenied) unless @asset.permissions(@user).include? :read

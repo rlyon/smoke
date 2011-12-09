@@ -45,10 +45,19 @@ module Smoke
         self.assets.empty? == false
       end
       
+      def has_permitted_assets?(user)
+        !self.assets.acls.where(:user_id => user.id).empty?
+      end
+      
       def permissions(user)
         return [:full_control,:read,:write,:read_acl,:write_acl] if self.user.id == user.id
         a = self.acls.where(:user_id == user.id)
-        a.map {|acl| acl.permission.to_sym}
+        if a.empty?
+          # check to see if there are assets which are available
+          return [:read] if self.has_permitted_assets?(user)
+        else
+          a.map {|acl| acl.permission.to_sym}
+        end
       end
       
       def create_acl!(user, acl)
