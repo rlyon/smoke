@@ -21,10 +21,6 @@ module Smoke
       @signature = nil
     end
     
-    def to_s
-      @signature || sign
-    end
-    
     def sign
       string_to_sign = @method.upcase + "\n"
       string_to_sign << @content_md5 + "\n"

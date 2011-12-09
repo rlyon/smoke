@@ -53,7 +53,24 @@ describe "String monkey: hex" do
     (s =~ /^[abcdef0-9]+$/).should >= 0
     (s =~ /^[ABCDEF0-9]+$/).should be_nil
   end
+end
+
+describe "String monkey: random" do
+  it "should return an exception if an invalid option is passed" do
+    expect { String.random(:length => 100, :bad => 'yep') }.to raise_error
+  end
   
+  it "should return a alpha only string" do
+    s = String.random(:length => 100, :charset => :alpha)
+    (s =~ /^[a-zA-Z]+$/).should >= 0
+    (s =~ /^[0-9]+$/).should be_nil
+  end
+  
+  it "should return a uppercase alphanumeric only string" do
+    s = String.random(:length => 100, :charset => :alnum_upper)
+    (s =~ /^[0-9A-Z]+$/).should >= 0
+    (s =~ /^[a-z]+$/).should be_nil
+  end
 end
 
 describe "Fixnum monkey: " do

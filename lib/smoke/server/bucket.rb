@@ -59,7 +59,11 @@ module Smoke
         a = self.acls.where(:user_id == user.id)
         if a.empty?
           # check to see if there are assets which are available
-          return [:read] unless self.permitted_assets(user).empty?
+          unless self.permitted_assets(user).empty?
+            return [:read] 
+          else
+            return []
+          end
         else
           a.map {|acl| acl.permission.to_sym}
         end
@@ -77,7 +81,7 @@ module Smoke
         self.destroy
       end
       
-      def remove_acls(user_id)
+      def remove_acls_by_user_id(user_id)
         a = self.acls.where(:user_id => user_id)
         a.each do |acl|
           acl.destroy

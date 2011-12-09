@@ -16,6 +16,16 @@ describe "Bucket" do
       :email => "mocky@dev.null.com",
       :role => "admin")
     @user.save!
+    @bocky = Smoke::Server::User.new(
+      :access_id => "0PN5J17HBGZHT7JJ3X84", 
+      :expires_at => Time.now.to_i + (60*60*24*28), 
+      :secret_key => "uV3F3YluFJax1cknvbcGwgjvx4QpvB+leU8dUj2p",
+      :username => "bocky",
+      :password => "mysecretpassword",
+      :display_name => "Bocky User",
+      :email => "bocky@dev.null.com"
+    )
+    @bocky.save!
     @bucket ||= @user.buckets.find_by_name(@user.username)
     @log_bucket ||= @user.buckets.find_by_name("#{@user.username}-logs")
     @file ||= @bucket.assets.new(:key => "path/to/my/file.txt", :size => 100, :user_id => @user.id)
@@ -59,5 +69,32 @@ describe "Bucket" do
     @asset.should_not == @file
   end
   
+  it "should take acls and assign them to the bucket" do
+    @acls = []
+    @acl = Smoke::Server::Acl.new(:user_id => @bocky.id, :bucket_id => @bucket.id, :permission => "read")
+    @acl.save
+    @acls << @acl
+    @bucket.assign_acls(@acls)
+    @bucket.acls.length.should == 1
+  end
+  
+  it "should give read permissions on the bucket to someone with access to assets in the bucket" do
+    @asset = Smoke::Server::Asset.find_by_key('path/to/my/file.txt')
+    @acl = Smoke::Server::Acl.new(:user_id => @bocky.id, :asset_id => @asset.id, :permission => "read")
+    @acl.save
+
+    @bocky.has_permission_to(:read, @bucket).should be_true
+  end
+  
+  it "should remove acls for a given user" do
+    @acls = []
+    @acl = Smoke::Server::Acl.new(:user_id => @bocky.id, :bucket_id => @bucket.id, :permission => "read")
+    @acl.save
+    @acls << @acl
+    @bucket.assign_acls(@acls)
+    @bocky.has_permission_to(:read, @bucket).should be_true
+    @bucket.remove_acls_by_user_id(@bocky.id)
+    @bocky.has_permission_to(:read, @bucket).should be_false
+  end
   
 end

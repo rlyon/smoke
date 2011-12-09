@@ -46,5 +46,28 @@ describe "User" do
     @bocky.all_my_buckets.length.should == 3
     @user.all_my_buckets.length.should == 2
   end
+  
+  it "should return the correct permissions with for a user with access" do
+    @bucket.create_acl!(@bocky, "read")
+    @bocky.has_permission_to(:read, @bucket).should be_true
+  end
+  
+  it "should authenticate with valid email and password" do
+    Smoke::Server::User.authenticate("mocky@dev.null.com", "mysecretpassword").should == @user
+  end
+  
+  it "should authenticate with valid username and password" do
+    Smoke::Server::User.authenticate("mocky", "mysecretpassword").should == @user
+  end
+  
+  it "should report a valid status if active" do
+    @user.is_active = true
+    @user.has_valid_status?.should be_true
+  end
+  
+  it "should report a invalid status if inactive" do
+    @user.is_active = false
+    @user.has_valid_status?.should be_false
+  end
 
 end 
