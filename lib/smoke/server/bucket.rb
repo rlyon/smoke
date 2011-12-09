@@ -18,6 +18,7 @@ module Smoke
       belongs_to :user
       has_many :acls, :dependent => :destroy
       has_many :assets, :dependent => :destroy
+      accepts_nested_attributes_for :assets
       
       scope :public_read, where(:visibility => 'public')
       
@@ -46,7 +47,7 @@ module Smoke
       end
       
       def has_permitted_assets?(user)
-        !self.assets.acls.where(:user_id => user.id).empty?
+        !self.assets.acls.where(:user_id => user.id)
       end
       
       def permissions(user)

@@ -10,6 +10,7 @@ module Smoke
       validates :permission, :presence => true
       
       class << self
+          
         def from_xml(xml,obj,&block)
           raise S3Exception.new(:InternalError, "Object does not respond to acls") unless obj.respond_to?(:acls)
           raise S3Exception.new(:InternalError, "Object does not respond to remove_user_acls") unless obj.respond_to?(:remove_acls)
