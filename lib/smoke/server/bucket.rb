@@ -49,7 +49,7 @@ module Smoke
       def permitted_assets(user)
         asset_list = []
         self.assets.each do |asset|
-          asset_list << asset if asset.acl.user_id == user.id
+          asset_list << asset unless asset.acls.where(:user_id => user.id).empty?
         end
         asset_list
       end
