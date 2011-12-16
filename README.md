@@ -10,7 +10,7 @@ Smoke - looks like a cloud but really isn't one - aims to leverage existing clou
 	$ yum install 
 	$ bundle install
 	
-	Modify the configuration files for nginx, thin and smoke.  Examples are found in the config directory.
+Modify the configuration files for nginx, thin and smoke.  Examples are found in the config directory.
 	
 	$ rake db:create
 	$ rake db:seed
