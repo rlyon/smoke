@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 ruby_string="ruby-1.9.2-p290"
-gemset_name="smoke_server"
+gemset_name="smoke"
 
 if rvm list strings | grep -q "${ruby_string}" ; then
 

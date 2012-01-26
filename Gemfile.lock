@@ -1,29 +1,20 @@
 GEM
   remote: http://rubygems.org/
   specs:
-    activemodel (3.1.3)
-      activesupport (= 3.1.3)
-      builder (~> 3.0.0)
-      i18n (~> 0.6)
-    activerecord (3.1.3)
-      activemodel (= 3.1.3)
-      activesupport (= 3.1.3)
-      arel (~> 2.2.1)
-      tzinfo (~> 0.3.29)
-    activesupport (3.1.3)
-      multi_json (~> 1.0)
-    arel (2.2.1)
     awesome_print (0.4.0)
     bcrypt-ruby (3.0.1)
-    builder (3.0.0)
+    bson (1.5.2)
+    bson_ext (1.5.2)
+      bson (= 1.5.2)
     daemons (1.1.4)
     diff-lcs (1.1.3)
     eventmachine (0.12.10)
-    i18n (0.6.0)
     metaclass (0.0.1)
     mime-types (1.17.2)
     mocha (0.10.0)
       metaclass (~> 0.0.1)
+    mongo (1.5.2)
+      bson (= 1.5.2)
     multi_json (1.0.3)
     nokogiri (1.5.0)
     rack (1.3.5)
@@ -47,7 +38,6 @@ GEM
       rack (~> 1.3, >= 1.3.4)
       rack-protection (~> 1.1, >= 1.1.2)
       tilt (~> 1.3, >= 1.3.3)
-    sqlite3 (1.3.4)
     thin (1.3.1)
       daemons (>= 1.0.9)
       eventmachine (>= 0.12.6)
@@ -55,7 +45,6 @@ GEM
     tilt (1.3.3)
     typhoeus (0.3.3)
       mime-types
-    tzinfo (0.3.31)
     xml-simple (1.1.1)
     yard (0.7.3)
 
@@ -63,18 +52,18 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  activerecord
   awesome_print
   bcrypt-ruby
+  bson_ext
   mime-types
   mocha
+  mongo
   nokogiri
   rack
   rack-test
   rspec
   simplecov
   sinatra
-  sqlite3
   thin
   typhoeus
   xml-simple
