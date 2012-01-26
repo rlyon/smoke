@@ -1,5 +1,6 @@
 module Smoke
-    class User < Smoke::Model::Base
+    class User
+      include Smoke::Document
       
       attr_reader :enc_password, :active, :activated_at, :created_at, :updated_at
       attr_accessor :username, :access_id, :secret_key, :display_name, :email

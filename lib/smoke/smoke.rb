@@ -9,11 +9,12 @@ require 'mongo'
 $:.unshift(File.dirname(__FILE__))
 
 module Smoke
-  autoload :MongoConnector, 'connector/mongo'
-  autoload :User,           'models/user'
+  autoload :Connection,       'adapters/mongo'
+  autoload :User,             'models/user'
+  autoload :Document,         'document'
 
   module Model
-    autoload :Base,    'models/base'
+    # fill
   end
 
   module S3
@@ -28,7 +29,7 @@ module Smoke
     # Fill me when refactoring is complete
   end
   
-  extend MongoConnector
+  extend Connection
 end
 
 Dir[File.join(File.dirname(__FILE__), 'extensions', '*.rb')].each do |extension|
