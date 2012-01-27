@@ -1,4 +1,4 @@
 #!/usr/bin/env ruby
 libs =  " -r irb/completion"
-libs << %( -r "#{File.dirname(__FILE__)}/config/environment/smoke.rb")
+libs << %( -r "#{File.dirname(__FILE__)}/config/initializers/smoke.rb")
 exec "irb #{libs} --simple-prompt"

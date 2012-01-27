@@ -3,17 +3,16 @@ module Smoke
       include Smoke::Document
       
       attr_accessor :password, :password_confirmation
-      
       key :username, String
       key :display_name, String
       key :email, String
-      key :access_id, String
-      key :secret_key, String
+      key :access_id, String, :default => String.random
+      key :secret_key, String, :default => String.random(:length => 40)
       key :enc_password, String
-      key :active, Boolean
+      key :active, Boolean, :default => false
       key :activated_at, Time
-      key :updated_at, Time
-      key :created_at, Time
+      key :updated_at, Time, :default => Time.now
+      key :created_at, Time, :default => Time.now
       
       def acls
         nil
@@ -31,15 +30,57 @@ module Smoke
         nil
       end
       
+      def has_permission_to?()
+      
+      end
+      
       def objects
         nil
+      end
+      
+      def password_salt
+        self.enc_password.split(':').first
+      end
+      
+      def password_hash
+        self.enc_password.split(':').last
       end
       
       def update( args = {} )
         nil
       end
       
+      class << self
+        def authenticate(identity, password)
+          if identity =~ /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i
+            user = find_by_username(identity)
+          else
+            user = find_by_username(identity)
+          end
+          
+          if user && user.password_hash == BCrypt::Engine.hash_secret(password, user.password_salt)
+            user
+          else
+            nil
+          end
+        end
+      end
       
+      private
+        def create_default_buckets
+          bucket = self.buckets.new(:name => self.username)
+          bucket.save!
+          bucket = self.buckets.new(:name => "#{self.username}-logs")
+          bucket.save!
+        end
+      
+        def encrypt_password
+          if password.present?
+            salt = BCrypt::Engine.generate_salt
+            hash = BCrypt::Engine.hash_secret(password, salt)
+            self.enc_password = "#{salt}:#{hash}"
+          end
+        end
       
       
       # has_many :buckets, :dependent => :destroy

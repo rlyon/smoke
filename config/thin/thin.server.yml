@@ -1,0 +1,16 @@
+--- 
+chdir: /Users/rlyon/src/ruby/sinatra/smoke
+environment: development
+address: 127.0.0.1
+servers: 1
+port: 4224
+timeout: 30
+log: logs/thin.log
+pid: tmp/pids/thin.pid
+max_conns: 1024
+max_persistent_conns: 512
+require: []
+rackup: server.ru
+
+wait: 30
+daemonize: false

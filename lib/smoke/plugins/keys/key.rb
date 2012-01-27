@@ -35,6 +35,7 @@ module Smoke
               return Marshal.load(Marshal.dump(default_value))
             end
           end
+          value
         end
         
         def set(value)

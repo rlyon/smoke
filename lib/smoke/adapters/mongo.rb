@@ -16,5 +16,9 @@ module Smoke
         raise "You need to set the database name: Smoke.database = foo"
       end
     end
+    
+    def collection(name)
+      @collection ||= Smoke.database.collection(name)
+    end
   end
 end
