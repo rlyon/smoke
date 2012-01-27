@@ -1,5 +1,6 @@
 module Smoke
   module MongoConnector
+    
     def connection
       @@connection ||= Mongo::Connection.new
     end
@@ -16,5 +17,6 @@ module Smoke
         raise "You need to set the database name: Smoke.database = foo"
       end
     end
+    
   end
 end

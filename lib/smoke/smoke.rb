@@ -10,11 +10,16 @@ $:.unshift(File.dirname(__FILE__))
 
 module Smoke
   autoload :Connection,       'adapters/mongo'
-  autoload :User,             'models/user'
   autoload :Document,         'document'
+  autoload :User,             'models/user'
+  
+  module Plugins
+    autoload :Keys,           'plugins/keys'
+    autoload :Model,          'plugins/model'
+  end
 
   module Model
-    # fill
+    
   end
 
   module S3

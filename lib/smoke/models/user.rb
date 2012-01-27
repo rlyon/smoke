@@ -2,9 +2,18 @@ module Smoke
     class User
       include Smoke::Document
       
-      attr_reader :enc_password, :active, :activated_at, :created_at, :updated_at
-      attr_accessor :username, :access_id, :secret_key, :display_name, :email
       attr_accessor :password, :password_confirmation
+      
+      key :username, String
+      key :display_name, String
+      key :email, String
+      key :access_id, String
+      key :secret_key, String
+      key :enc_password, String
+      key :active, Boolean
+      key :activated_at, Time
+      key :updated_at, Time
+      key :created_at, Time
       
       def acls
         nil

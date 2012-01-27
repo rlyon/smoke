@@ -10,14 +10,37 @@ module Smoke
           self.options = (options || {}).symbolize_keys
           self.default_value = self.options[:default]
         end
-
-        def ==(other)
-          @name == other.name && @type == other.type
-        end
-
+        
         def number?
           type == Integer || type == Float
         end
+        
+        def time?
+          type == Time
+        end
+        
+        def string?
+          type == String
+        end
+        
+        def bool?
+          type == Boolean
+        end
+        
+        def get(value)
+          if value.nil? && !default_value.nil?
+            if default_value.respond_to?(:call)
+              return default_value.call
+            else
+              return Marshal.load(Marshal.dump(default_value))
+            end
+          end
+        end
+        
+        def set(value)
+          value
+        end
+        
       end
     end
   end

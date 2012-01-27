@@ -1,15 +1,13 @@
 module Smoke
   module Document
-    include Plugin::Attributes
+    include Smoke::Plugins::Model
+    include Smoke::Plugins::Keys
     
-    def save
-      unless @document.nil?
-        database.collection.save(@document)
-      else
-        puts @attributes.stringify_keys.inspect
-        database.collection.insert @attributes.stringify_keys
-      end   
+    def self.included(klass)
+      klass.extend(Smoke::Plugins::Model::ClassMethods)
+      klass.extend(Smoke::Plugins::Keys::ClassMethods)
+      klass.key :_id, ObjectId, :default => lambda { BSON::ObjectId.new }
     end
-    
+        
   end
 end
