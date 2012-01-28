@@ -11,11 +11,16 @@ $:.unshift(File.dirname(__FILE__))
 module Smoke
   autoload :Connection,       'adapters/mongo'
   autoload :Document,         'document'
+  autoload :S3Exception,      'exceptions'
   autoload :User,             'models/user'
+  autoload :SmBucket,         'models/smbucket'
+  autoload :SmObject,         'models/smobject'
+  autoload :Acl,              'models/acl'
   
   module Plugins
     autoload :Keys,           'plugins/keys'
     autoload :Model,          'plugins/model'
+    autoload :Permissions,    'plugins/permissions'
   end
 
   module Model

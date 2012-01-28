@@ -18,7 +18,7 @@ module Smoke
     end
     
     def collection(name)
-      @collection ||= Smoke.database.collection(name)
+      Smoke.database.collection(name)
     end
   end
 end

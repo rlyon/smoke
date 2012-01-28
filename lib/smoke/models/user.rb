@@ -1,174 +1,141 @@
 module Smoke
-    class User
-      include Smoke::Document
-      
-      attr_accessor :password, :password_confirmation
-      key :username, String
-      key :display_name, String
-      key :email, String
-      key :access_id, String, :default => String.random
-      key :secret_key, String, :default => String.random(:length => 40)
-      key :enc_password, String
-      key :active, Boolean, :default => false
-      key :activated_at, Time
-      key :updated_at, Time, :default => Time.now
-      key :created_at, Time, :default => Time.now
-      
-      def acls
-        nil
+  class User
+    include Smoke::Document
+    
+    attr_accessor :password, :password_confirmation, :password_hash, :password_salt
+    key :username, String
+    key :display_name, String
+    key :email, String
+    key :access_id, String, :default => String.random
+    key :secret_key, String, :default => String.random(:length => 40)
+    key :enc_password, String
+    key :active, Boolean, :default => false
+    key :activated_at, Time
+    key :max_buckets, Integer, :default => 2
+    key :role, String, :default => "standard"
+    
+    def acls
+      nil
+    end
+    
+    def active?
+      self.active
+    end
+    
+    def activate
+      self.active = true
+      self.save
+    end
+    
+    def buckets(args = {})
+      args.include_only(:refresh)
+      # Use a special all method which gets shared buckets as well???
+      if args.include?(:refresh)
+        @buckets = SmBucket.where(:user_id => id)
+      else
+        @buckets ||= SmBucket.where(:user_id => id)
       end
-      
-      def active?
-        nil
+      @buckets
+    end
+    
+    def bucket_names
+      @bucket_names ||= buckets.inject([]) do |ret,bucket|
+        ret << bucket.name
       end
-      
-      def activate
-        nil
+    end
+    
+    def create_default_buckets
+      # Would be really nice as a callback...  Don't know those yet
+      unless self.has_bucket?(self.username)
+        bucket = SmBucket.new(:user_id => self.id, :name => self.username)
+        bucket.save
       end
-      
-      def buckets
-        nil
+      unless self.has_bucket?("#{self.username}-logs")
+        bucket = SmBucket.new(:user_id => self.id, :name => "#{self.username}-logs")
+        bucket.save
       end
-      
-      def has_permission_to?()
-      
+    end
+    
+    def has_permission_to?(acl, obj)
+      obj.permissions(self).include? acl
+    end
+    
+    def has_bucket?(name)
+      bucket_names.include?(name)
+    end
+    
+    def objects
+      args.include_only(:refresh)
+      # Use a special all method which gets shared buckets as well
+      if args.include?(:refresh)
+        @objects = SmObject.all(:user_id => id)
+      else
+        @objects ||= SmObject.all(:user_id => id)
       end
-      
-      def objects
-        nil
-      end
-      
-      def password_salt
-        self.enc_password.split(':').first
-      end
-      
-      def password_hash
-        self.enc_password.split(':').last
-      end
-      
-      def update( args = {} )
-        nil
-      end
-      
-      class << self
-        def authenticate(identity, password)
-          if identity =~ /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i
-            user = find_by_username(identity)
-          else
-            user = find_by_username(identity)
-          end
-          
-          if user && user.password_hash == BCrypt::Engine.hash_secret(password, user.password_salt)
-            user
-          else
-            nil
-          end
+      @objects
+    end
+    
+    def password_salt
+      self.enc_password.split(':').first
+    end
+    
+    def password_hash
+      self.enc_password.split(':').last
+    end
+    
+    def save
+      create_default_buckets
+      encrypt_password
+      super
+    end
+    
+    class << self
+      def authenticate(identity, password)
+        if identity =~ /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i
+          user = find_by_username(identity)
+        else
+          user = find_by_username(identity)
+        end
+        
+        if user && user.password_hash == BCrypt::Engine.hash_secret(password, user.password_salt)
+          user
+        else
+          nil
         end
       end
-      
-      private
-        def create_default_buckets
-          bucket = self.buckets.new(:name => self.username)
-          bucket.save!
-          bucket = self.buckets.new(:name => "#{self.username}-logs")
-          bucket.save!
+    end
+    
+    private
+      def encrypt_password
+        unless password.nil?
+          salt = BCrypt::Engine.generate_salt
+          hash = BCrypt::Engine.hash_secret(password, salt)
+          self.enc_password = "#{salt}:#{hash}"
         end
-      
-        def encrypt_password
-          if password.present?
-            salt = BCrypt::Engine.generate_salt
-            hash = BCrypt::Engine.hash_secret(password, salt)
-            self.enc_password = "#{salt}:#{hash}"
-          end
-        end
-      
-      
-      # has_many :buckets, :dependent => :destroy
-      # has_many :acls, :dependent => :destroy
-      # has_many :assets, :dependent => :destroy
-#       
-      # before_save :encrypt_password
-      # after_create :create_default_buckets
-#       
-      # validates :access_id, :presence => true
-      # validates :access_id, :length => { :is => 20 }
-      # validates :access_id, :format => { :with => /[a-zA-Z0-9]/ }
-      # validates :access_id, :uniqueness => true
-#       
-      # validates :secret_key, :presence => true
-      # validates :secret_key, :length => { :is => 40 }
-#       
-      # validates :username, :uniqueness => true
-      # validates :username, :length => { :in => 4..8 }
-      # validates :username, :presence => true
-#       
-      # validates :display_name, :length => { :in => 2..40 }
-      # validates :display_name, :presence => true
-      # validates :display_name, :format => { :with => /[a-zA-Z ]/ }
-#       
-      # validates :email, :presence => true
-      # validates :email, :format => { :with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i }
-      # validates :email, :uniqueness => true
-#       
-      # validates :password, :presence => true, :on => :create
-#       
-      # # The object have a permissions method, and acl must be a symbol representation of the permission
-      # def has_permission_to( acl, obj )
-        # obj.permissions(self).include? acl
-      # end
-#       
-      # def has_valid_status?
-        # self.is_active
-      # end
-#       
-      # def all_my_buckets
-        # buckets = []
-        # owned_buckets = self.buckets.find(:all)
-        # shared_buckets = Bucket.find_all_through_acl(self)
-        # owned_buckets.each { |bucket| buckets << bucket unless bucket.nil? }
-        # shared_buckets.each { |bucket| buckets << bucket unless bucket.nil? }
-        # buckets.sort! { |a,b| a.name <=> b.name }
-      # end
-#       
-      # def password_salt
-        # self.enc_password.split(':').first
-      # end
-#       
-      # def password_hash
-        # self.enc_password.split(':').last
-      # end
-#       
-      # class << self
-        # def authenticate(identity, password)
-          # if identity =~ /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i
-            # user = find_by_email(identity)
-          # else
-            # user = find_by_username(identity)
-          # end
-#           
-          # if user && user.password_hash == BCrypt::Engine.hash_secret(password, user.password_salt)
-            # user
-          # else
-            # nil
-          # end
-        # end
-      # end
-# 
-      # private
-      # def encrypt_password
-        # if password.present?
-          # salt = BCrypt::Engine.generate_salt
-          # hash = BCrypt::Engine.hash_secret(password, salt)
-          # self.enc_password = "#{salt}:#{hash}"
-        # end
-      # end
-#       
-      # def create_default_buckets
-        # bucket = self.buckets.new(:name => self.username)
-        # bucket.save!
-        # bucket = self.buckets.new(:name => "#{self.username}-logs")
-        # bucket.save!
-      # end
-      
+      end
+    
+    
+    # has_many :buckets, :dependent => :destroy
+    # has_many :acls, :dependent => :destroy
+    # has_many :assets, :dependent => :destroy
+    # before_save :encrypt_password
+    # after_create :create_default_buckets
+    # validates :access_id, :presence => true
+    # validates :access_id, :length => { :is => 20 }
+    # validates :access_id, :format => { :with => /[a-zA-Z0-9]/ }
+    # validates :access_id, :uniqueness => true
+    # validates :secret_key, :presence => true
+    # validates :secret_key, :length => { :is => 40 }
+    # validates :username, :uniqueness => true
+    # validates :username, :length => { :in => 4..8 }
+    # validates :username, :presence => true
+    # validates :display_name, :length => { :in => 2..40 }
+    # validates :display_name, :presence => true
+    # validates :display_name, :format => { :with => /[a-zA-Z ]/ }
+    # validates :email, :presence => true
+    # validates :email, :format => { :with => /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i }
+    # validates :email, :uniqueness => true
+    # validates :password, :presence => true, :on => :create
+
   end
 end
