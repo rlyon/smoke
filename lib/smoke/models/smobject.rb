@@ -17,6 +17,10 @@ module Smoke
     key :deleted_at, Time, :default => Time.now
     key :is_placeholder, Boolean, :default => false
     
+    def basename(delimiter = '/')
+      self.key.split(delimiter).last
+    end
+    
     def lock
       self.locked = true
       save
@@ -316,5 +320,5 @@ module Smoke
     # end
 #     
   # end
-
+  end
 end

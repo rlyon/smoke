@@ -3,7 +3,8 @@ module Smoke
     module Permissions
       
       def self.included(klass)
-        raise "[Permissions]: Object does not respond to id" unless klass.respond_to?(:id)
+        # There has got to be a better way than instansiating an object every time for testing
+        raise "[Permissions]: Object #{klass.to_s} does not respond to id" unless klass.new.respond_to?(:id)
       end
       
       def acl_for(user, *acls)
@@ -27,8 +28,19 @@ module Smoke
         [:full_control, :read, :write, :read_acl, :write_acl ]
       end
       
+      def acl_inherited_values(acl)
+        if acl == :full_control
+          return acl_all_values
+        elsif acl == :write
+          return [:write, :read]
+        elsif acl == :write_acl
+          return [:write_acl, :read_acl]
+        end
+        [acl]
+      end
+      
       def add(acl)
-        
+        raise "[Permissions]: Invalid acl specified" unless self.acl_all_values.include?(acl)
         Acl.new( :obj_id => self.id, :user_id => user.id, :permission => acl.to_s )
       end
       

@@ -28,23 +28,14 @@ module Smoke
     key :location, String, :default => "unset"
     key :visibility, String, :default => "private"
     
-    def common_prefixes(prefix)
+    def common_prefixes(prefix = '')
       prefixes = []
       rx = Regexp.new('^' + prefix + '[a-zA-Z0-9_\.\-]*\/')
-      objects.where(:refresh => true, :prefix => rx).each do |object|
-        p = rx.match(object.prefix).to_s
-        prefixes << p unless p.empty || prefixes.include?(p)
+      objects(:use_cache => false, :prefix => prefix, :only_common => true).each do |object|
+        p = rx.match(object.key).to_s
+        prefixes << p unless p.empty? || prefixes.include?(p)
       end
       prefixes
-    end
-    
-    def objects_in(prefix)
-      objs = []
-      rx = Regexp.new('^' + prefix + '[a-zA-Z0-9\.\-\_]+$')
-      objects.where(:refresh => true, :prefix => rx).each do |object|
-        p = rx.match(object.prefix).to_s
-        objs << p unless p.empty || objs.include?(p)
-      end
     end
     
     def has_objects?
@@ -63,36 +54,37 @@ module Smoke
     end
     
     def objects(args = {})
-      args.include_only(:refresh, :query, :sort)
+      args.include_only(:use_cache, :prefix, :sort, :recursive, :only_common)
+      
+      recurse = args.has_key?(:recursive) ? args[:recursive] : true
+      only_common = args.has_key?(:only_common) ? args[:only_common] : false
+      prefix = args.has_key?(:prefix) ? args[:prefix] : ''
+      use_cache = args.include?(:use_cache) ? args[:use_cache] : false
+      
+      allowed_chars = '[a-zA-Z0-9\.\-\_]'
+      if only_common
+        regex_end = '*\/'
+      else
+        regex_end = recurse ? '' : '+$'
+      end
+      
+      rx = Regexp.new('^' + prefix + allowed_chars + regex_end)
       
       # Update the query with the bucket id
-      query = args.has_key?(:query) ? args[:query] : {}
+      query = {}
+      query[:key] = rx 
       query[:bucket_id] = self.id
       
       # Set the sorting direction... put this back in connector ???
       sort = [["key", Mongo::ASCENDING]]
       
       # Use a special all method which gets shared buckets as well ???
-      if args.include?(:refresh) && args[:refresh]
-        @objects = SmObject.where(query,sort)
+      if use_cache
+        @objects_cache ||= SmObject.where(query)
       else
-        @objects ||= SmObject.where(query,sort)
+        @objects_cache = SmObject.where(query)
       end
-      @objects
-    end
-    
-    def objects_by_prefix(args = {})
-      args.include_only( :max_keys, :prefix, :marker, :base_only, :delimiter, :marked_for_delete, :sort )
-      
-      base_only = args.has_key?(:base_only) ? args[:base_only] : true
-      marker = args.has_key?(:marker) ? args[:marker] : nil
-      delimiter = args.has_key?(:delimiter) ? args[:delimiter] : '/'
-      
-      query = {}
-      query[:prefix] = args[:prefix] if args.has_key?(:prefix)
-      query[:delete_marker] = true if args.has_key?(:marked_for_delete) && args[:marked_for_delete]
-      
-      object_list = self.objects(:refresh => true, :query => query)
+      @objects_cache
     end
     
     def versioning_from_xml(xml)

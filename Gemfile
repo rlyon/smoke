@@ -8,6 +8,7 @@ gem 'thin'
 gem 'bcrypt-ruby'
 gem 'typhoeus'
 gem 'bson_ext'
+gem 'rake'
 
 # For AWS
 gem 'mime-types'

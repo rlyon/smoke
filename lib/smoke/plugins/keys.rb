@@ -5,7 +5,7 @@ module Smoke
     module Keys
       
       module ClassMethods
-        
+          
         def create_accessors(key)
           define_method(key.name.to_sym) do
             read_key(key.name.to_sym)
@@ -87,6 +87,10 @@ module Smoke
       def []=(name,value)
         raise "No key dumbass!!!" unless has_key?(name)
         write_key(name,value)
+      end
+      
+      def ==(obj)
+        obj.equal?(self) || (obj.instance_of?(self.class) && obj.id == self.id)
       end
       
       def has_key?(name)

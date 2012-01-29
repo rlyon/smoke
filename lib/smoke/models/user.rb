@@ -27,19 +27,21 @@ module Smoke
       self.save
     end
     
+    # For some reason my caching is not working...  end up with empty sets.  Is it naming?
     def buckets(args = {})
-      args.include_only(:refresh)
+      args.include_only(:use_cache)
+      use_cache = args.include?(:use_cache) ? args[:use_cache] : false
       # Use a special all method which gets shared buckets as well???
-      if args.include?(:refresh)
-        @buckets = SmBucket.where(:user_id => id)
+      if use_cache
+        @buckets_cache ||= SmBucket.where(:user_id => self.id)
       else
-        @buckets ||= SmBucket.where(:user_id => id)
+        @buckets_cache = SmBucket.where(:user_id => self.id)
       end
-      @buckets
+      @buckets_cache
     end
     
     def bucket_names
-      @bucket_names ||= buckets.inject([]) do |ret,bucket|
+      @bucket_names_cache = buckets(:use_cache => false).inject([]) do |ret,bucket|
         ret << bucket.name
       end
     end
@@ -54,6 +56,8 @@ module Smoke
         bucket = SmBucket.new(:user_id => self.id, :name => "#{self.username}-logs")
         bucket.save
       end
+      # Return the buckets and reload the cache
+      self.buckets(:use_cache => false)
     end
     
     def has_permission_to?(acl, obj)
@@ -65,12 +69,12 @@ module Smoke
     end
     
     def objects
-      args.include_only(:refresh)
+      args.include_only(:use_cache)
       # Use a special all method which gets shared buckets as well
-      if args.include?(:refresh)
-        @objects = SmObject.all(:user_id => id)
+      if args.include?(:use_cache) && !args[:use_cache]
+        @objects = SmObject.all(:user_id => self.id)
       else
-        @objects ||= SmObject.all(:user_id => id)
+        @objects ||= SmObject.all(:user_id => self.id)
       end
       @objects
     end
@@ -92,7 +96,7 @@ module Smoke
     class << self
       def authenticate(identity, password)
         if identity =~ /\A([^@\s]+)@((?:[-a-z0-9]+\.)+[a-z]{2,})\Z/i
-          user = find_by_username(identity)
+          user = find_by_email(identity)
         else
           user = find_by_username(identity)
         end

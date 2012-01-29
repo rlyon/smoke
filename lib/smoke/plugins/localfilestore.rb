@@ -2,25 +2,29 @@ module Smoke
   class LocalFileStore
     
     class ClassMethods
-    def create(path)
+      def create_file(path, data)
+        
+      end
       
-    end
+      def create_directory(path)
+        
+      end
     
-    def delete(path)
+      def delete_file(path)
+        
+      end
       
-    end
-    
-    def move(path)
+      def move_file(path)
+        
+      end
       
-    end
-    
-    def trash(path)
+      def trash_file(path)
+        
+      end
       
-    end
-    
-    def version(path)
-      
-    end
-    
+      def version_file(path, version)
+        
+      end
+    end    
   end
 end
