@@ -83,6 +83,19 @@ module Smoke
       def key_names
         keys.keys
       end
+      
+      def mimic(args = {})
+        args.include_only(:except)
+        except = args.has_key?(:except) ? args[:except] : []
+        new_obj = self.class.new
+        attrs = self.attributes.dup
+        # Always remove _id
+        attrs.delete(:_id)
+        # Remove the requested
+        args[:except].each { |a| attrs.delete(a) if attrs.has_key?(a) } 
+        new_obj.attributes = attrs
+        new_obj
+      end
 
       def [](name)
         read_key(name)

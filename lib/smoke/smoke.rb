@@ -15,6 +15,7 @@ module Smoke
   autoload :User,             'models/user'
   autoload :SmBucket,         'models/smbucket'
   autoload :SmObject,         'models/smobject'
+  autoload :Version,          'models/version'
   autoload :Acl,              'models/acl'
   
   module Plugins
