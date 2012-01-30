@@ -24,6 +24,7 @@ module Smoke
       def from_mongo(value)
         value.nil? ? nil : !!value
       end
+
     end
   end
 end

@@ -21,6 +21,7 @@ module Smoke
     autoload :Keys,           'plugins/keys'
     autoload :Model,          'plugins/model'
     autoload :Permissions,    'plugins/permissions'
+    autoload :LocalFileStore, 'plugins/localfilestore'
   end
 
   module Model

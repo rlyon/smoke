@@ -8,7 +8,6 @@ production:
     admin_email: admin@mybig.edu
     upload_chunks: 1024
     filepath: /mnt/smoke
-    trashpath: /mnt/trashcan
     
 development:
     logfiles: /tmp
@@ -20,7 +19,6 @@ development:
     admin_email: admin@mybig.edu
     upload_chunks: 1024
     filepath: /tmp/smoke
-    trashpath: /tmp/trashcan
     
 test:
     logfiles: /tmp
@@ -32,4 +30,3 @@ test:
     admin_email: admin@mybig.edu
     upload_chunks: 1024
     filepath: /tmp/test
-    trashpath: /tmp/trashcan

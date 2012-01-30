@@ -63,7 +63,6 @@ describe "Smoke::SmBucket" do
     keys.include?(@obj3).should == true
     
     keys = @bucket.objects(:prefix => 'path/to/this/', :recursive => false)
-    puts keys.inspect
     keys.size.should == 3
     keys.include?(@obj4).should == true
     keys.include?(@obj5).should == true

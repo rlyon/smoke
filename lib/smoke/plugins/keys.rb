@@ -16,7 +16,11 @@ module Smoke
           end
 
           define_method("#{key.name}?") do
-            !read_key("#{key.name}").empty?
+            if key.type == Boolean 
+              read_key("#{key.name}")
+            else
+              !read_key("#{key.name}").empty?
+            end
           end
           
           define_singleton_method("find_by_#{key.name}") do |value|
