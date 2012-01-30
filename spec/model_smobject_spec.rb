@@ -66,4 +66,20 @@ describe "Smoke::SmBucket" do
     File.exists?(@obj1.trash_path).should be_true
     @obj1.path.should == @obj1.trash_path
   end
+  
+  it "should copy a file" do
+    file = 'testfiles/bacon.txt'
+    etag = 'd4c228bdc5749ea3b20c3e07d5f1eb65'
+    data = File.new(File.dirname(__FILE__) + '/' + file, 'r')
+    @obj1.store(data,etag)
+    @obj1.etag.should == etag
+    @obj1.size.should == 19971
+    
+    copy = @obj1.copy :to => 'path/to/my/super/cool/other.txt'
+    copy.etag.should == etag
+    copy.size.should == 19971
+    
+    File.exists?(@obj1.active_path).should be_true
+    File.exists?(copy.active_path).should be_true
+  end
 end

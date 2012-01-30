@@ -15,10 +15,9 @@ module Smoke
     end
     
     def delete
-      trash_object(self.active_path)
+      trash_object
     end
       
-
     def store(data, etag)
       store_object(:data => data, :etag => etag ) do |digest,size|
         self.size = size

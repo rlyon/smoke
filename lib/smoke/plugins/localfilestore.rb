@@ -12,6 +12,8 @@ module Smoke
         klass.key :delete_marker, Boolean, :default => false
         klass.key :deleted_at, Time, :default => Time.now
         klass.key :is_placeholder, Boolean, :default => false
+        klass.key :is_version, Boolean, :default => false
+        klass.key :version_string, String, :default => String.random(:length => 32)
       end
      
       def active_dir
@@ -28,15 +30,25 @@ module Smoke
         self.object_key.split(delimiter).last
       end
       
+      def copy(args = {})
+        args.include_only(:to)
+        raise "[LocalFileStore.move_object]: Destination must be specified" unless args.has_key?(:to)
+        new_file = self.mimic(:except => [:is_version, :version_string, :object_key, :locked, :delete_marker])
+        new_file.object_key = args[:to]
+        new_file.save
+        FileUtils.cp self.active_path, new_file.active_path
+        new_file
+      end
+      
       def deleted?
         self.delete_marker == true
       end
             
-      def delete_object(path)
+      def delete(path)
         FileUtils.rm path
       end
       
-      def delete_folder(path)
+      def rmfolder(path)
         nil
       end
       
@@ -66,6 +78,8 @@ module Smoke
       def path
         if self.deleted?
           trash_path
+        elsif self.is_version?
+          version_path
         else
           active_path
         end
@@ -121,7 +135,7 @@ module Smoke
         "#{SMOKE_CONFIG['filepath']}/#{self.bucket.name}/.trash/#{self.dirname}"
       end
       
-      def trash_object(path)
+      def trash_object
         self.delete_marker = true
         self.mkdir(self.trash_dir)
         self.move_object :source => self.active_path, :destination => self.trash_path, :force => true
@@ -137,8 +151,16 @@ module Smoke
         self.save
       end
       
-      def version_object(path, version)
-        nil
+      def mkversion(path, version)
+        new_file = self.mimic(:except => [:is_version, :version_string, :locked, :delete_marker])
+        new_file.is_version = true
+        new_file.save
+        FileUtils.cp self.active_path, self.version_path
+        new_file
+      end
+      
+      def version_path
+        "#{self.dirname}/.#{self.basename}.#{self.version_string}"
       end
         
     end    
