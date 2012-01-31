@@ -68,4 +68,5 @@ module Smoke
       c
     end
   end
+    
 end

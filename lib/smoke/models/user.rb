@@ -6,7 +6,7 @@ module Smoke
     key :username, String
     key :display_name, String
     key :email, String
-    key :access_id, String, :default => String.random
+    key :access_id, String, :default => String.random(:length => 20)
     key :secret_key, String, :default => String.random(:length => 40)
     key :enc_password, String
     key :active, Boolean, :default => false
@@ -17,27 +17,22 @@ module Smoke
     def acls
       nil
     end
-    
-    def active?
-      self.active
-    end
-    
+
     def activate
       self.active = true
       self.save
     end
     
-    # For some reason my caching is not working...  end up with empty sets.  Is it naming?
     def buckets(args = {})
       args.include_only(:use_cache)
       use_cache = args.include?(:use_cache) ? args[:use_cache] : false
       # Use a special all method which gets shared buckets as well???
       if use_cache
-        @buckets_cache ||= SmBucket.where(:user_id => self.id)
+        buckets ||= SmBucket.where(:user_id => self.id)
       else
-        @buckets_cache = SmBucket.where(:user_id => self.id)
+        buckets = SmBucket.where(:user_id => self.id)
       end
-      @buckets_cache
+      @buckets_cache = (buckets + self.shared_buckets)
     end
     
     def bucket_names
@@ -58,6 +53,11 @@ module Smoke
       end
       # Return the buckets and reload the cache
       self.buckets(:use_cache => false)
+    end
+    
+    def deactivate
+      self.active = false
+      self.save
     end
     
     def has_permission_to?(acl, obj)
@@ -91,6 +91,26 @@ module Smoke
       create_default_buckets
       encrypt_password
       super
+    end
+    
+    def shared_buckets
+      buckets = []
+      acls = Acl.where(:user_id => self.id)
+      acls.each do |acl|
+        bucket = SmBucket.find(:_id => acl.obj_id)
+        buckets << bucket unless bucket.nil? || buckets.include?(bucket)
+      end
+      buckets
+    end
+    
+    def shared_objects
+      objects = []
+      acls = Acl.where(:user_id => self.id)
+      acls.each do |acl|
+        object = SmObject.find(:_id => acl.obj_id)
+        objects << object unless object.nil? || objects.include?(object)
+      end
+      objects
     end
     
     class << self

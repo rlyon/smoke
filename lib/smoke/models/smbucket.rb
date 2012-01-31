@@ -29,6 +29,8 @@ module Smoke
     key :visibility, String, :default => "private"
     
     def common_prefixes(prefix = '')
+      prefix = '' if prefix.nil?
+      
       prefixes = []
       rx = Regexp.new('^' + prefix + '[a-zA-Z0-9_\.\-]*\/')
       objects(:use_cache => false, :prefix => prefix, :only_common => true).each do |object|
@@ -58,7 +60,7 @@ module Smoke
       
       recurse = args.has_key?(:recursive) ? args[:recursive] : true
       only_common = args.has_key?(:only_common) ? args[:only_common] : false
-      prefix = args.has_key?(:prefix) ? args[:prefix] : ''
+      prefix = args.has_key?(:prefix) && !args[:prefix].nil? ? args[:prefix] : ''
       use_cache = args.include?(:use_cache) ? args[:use_cache] : false
       
       allowed_chars = '[a-zA-Z0-9\.\-\_]'

@@ -1,27 +1,10 @@
 module Smoke
-  module Server
+  module S3
     class App < Sinatra::Base
       helpers Sinatra::ResponseHelper
+      helpers Sinatra::FetchHelper
       
       set :views, [File.dirname(__FILE__) + '/../../../views']
-      
-      # Get service.  Implements the standard S3 Get Service command and is
-      # extended to handle listing user(s) attributes for external interfaces.
-      # This will be also be used for a directory style lookup to search for users
-      # to share with.
-      get '/' do
-        if params.has_key?('user')
-          # show user details if user is admin or self
-          respond_error(:NotImplemented)
-        elsif params.has_key?('users')
-          # show all user details if user is admin or has allowed directory lookup
-          respond_error(:NotImplemented)
-        else
-          @user = request.env['smoke.user']
-          @buckets = @user.all_my_buckets
-          respond_ok(:get_service)
-        end
-      end
       
       # Put service to update user attributes or create a user if that user does
       # not already exist.  Users will have the ability to update their own profiles 
@@ -52,12 +35,7 @@ module Smoke
       
       # Get operations on the bucket
       get '/:bucket/?' do |bucket|
-        @user = request.env['smoke.user']
-        @bucket = Bucket.find_by_name(bucket)
-        
-        respond_error(:NoSuchBucket) if @bucket.nil?
-        respond_error(:AccessDenied) unless @user.has_permission_to :read, @bucket
-        log_access(:GET, @user, @bucket)
+        setup(:bucket => bucket)
         
         if params.has_key?('versioning')
           erb :get_bucket_versioning
@@ -92,11 +70,15 @@ module Smoke
           @prefix = params.has_key?('prefix') ? params['prefix'] : nil
 
           unless @delimited
-            @assets = @bucket.assets.not_marked_for_deletion
+            @assets = SmObject.where(:bucket_id => @bucket.id, :deleted => false)
             @common_prefixes = []
           else
-            @assets = @bucket.find_filtered_assets :prefix => @prefix, :max_keys => @max_keys, :marked_for_delete => false
-            @common_prefixes = @bucket.common_prefixes :prefix => @prefix, :delimiter => params['delimiter']
+            @assets = @bucket.objects :prefix => @prefix
+            @common_prefixes = @bucket.common_prefixes @prefix
+            puts @prefix.inspect
+            puts @bucket.inspect
+            puts @assets.inspect
+            puts @common_prefixes.inspect
           end
           
           erb :get_bucket
@@ -104,41 +86,31 @@ module Smoke
       end
       
       # Give me HEAD!
-      head '/:bucket/*' do |bucket,asset|
-        @user = request.env['smoke.user']
-        @bucket = Bucket.find_by_name(bucket)
-        respond_error(:NoSuchBucket) if @bucket.nil?
-        respond_error(:AccessDenied) unless @bucket.permissions(@user).include? :read
-        @asset = @bucket.assets.where(:key => asset).first
-        respond_error(:NoSuchKey) if @asset.nil?
-        respond_error(:AccessDenied) unless @asset.permissions(@user).include? :read
-        respond_ok(nil,{:etag => @asset.etag, :modified => @asset.updated_at, :size => @asset.size, :content_type => @asset.content_type})
+      head '/:bucket/*' do |bucket,object|
+        setup :bucket => bucket, :object => object
+        respond_ok(nil,
+          { :etag => @object.etag, 
+            :modified => @object.updated_at, 
+            :size => @object.size, 
+            :content_type => @object.content_type
+          }
+        )
       end
       
       # Get operations on the object (asset)
-      get '/:bucket/*' do |bucket,asset|
-        respond_error(:InvalidArgument) unless params.include_only?('torrent', 'acl', 'bucket', 'splat')
-        
-        @user = request.env['smoke.user']
-        @bucket = Bucket.find_by_name(bucket)
-        
-        respond_error(:NoSuchBucket) if @bucket.nil?
-        respond_error(:AccessDenied) unless @bucket.permissions(@user).include? :read
-        log_access(:GET, @user, @bucket)
-        
-        @asset = @bucket.assets.where(:key => asset).first
-        respond_error(:NoSuchKey) if @asset.nil?
+      get '/:bucket/*' do |bucket,path|
+        allow_params 'torrent', 'acl', 'bucket'
+        setup :bucket => bucket, :object => path
         
         if params.has_key?('torrent')
           respond_error(:NotImplemented)
         # Sets acls for the bucket
         elsif params.has_key?('acl')
-           @obj = @asset
-           @acls = @asset.acls
-           @acls << @asset.bucket.acls
+           @obj = @object
+           @acls = @object.acls
+           @acls << @object.bucket.acls
            erb :get_access_control_list
         else
-          respond_error(:AccessDenied) unless @asset.permissions(@user).include? :read
           etag @asset.etag
           send_file @asset.path, :type => @asset.content_type, :filename => @asset.filename
         end
@@ -146,14 +118,11 @@ module Smoke
       
       # Put operations on the bucket
       put '/:bucket/?' do |bucket|
-        bucket_already_exists = false
-        @user = request.env['smoke.user']
-        @bucket = Bucket.find_by_name(bucket)
-        respond_error(:NoSuchBucket) if @bucket.nil?
+        setup :bucket => bucket
         
         # Sets versioning for the bucket
         if params.has_key?('versioning')
-          respond_error(:AccessDenied) unless @bucket.permissions(@user).include? :full_control
+          require_acl :full_control, @bucket
           begin
             @bucket.versioning_from_xml(request.body.read)
           rescue Smoke::Server::S3Exception => e
@@ -162,7 +131,7 @@ module Smoke
           respond_ok
         # Sets acls for the bucket
         elsif params.has_key?('acl')
-          respond_error(:AccessDenied) unless @user.has_permission_to :write_acl, @bucket
+          require_acl :write_acl, @bucket
           begin
             Acl.from_xml(request.body, @bucket) do |acl|
               acl.save!
@@ -184,7 +153,7 @@ module Smoke
           respond_error(:NotImplemented)
         # Sets the logging status of the bucket.
         elsif params.has_key?('logging')
-          respond_error(:AccessDenied) unless @bucket.permissions(@user).include? :full_control
+          require_acl :full_control, @bucket
           @bucket.logging_from_xml(request.body.read)
           respond_ok
         # Return the notification status of the bucket.  Not implemented.
@@ -220,12 +189,10 @@ module Smoke
       # This may end up being a special case used to create application/x-directory
       # objects.  Assets already handles this in the write method.
       put '/:bucket/*/' do |bucket,asset|
-        @user = request.env['smoke.user']
-        @bucket = Bucket.find_by_name(bucket)
-        respond_error(:NoSuchBucket) if @bucket.nil?
-        log_access(:PUT, @user, @bucket)
+        setup :bucket => bucket
+        require_acl :write, @bucket
         
-        respond_error(:AccessDenied) unless @bucket.permissions(@user).include? :write
+        
         @asset = @bucket.find_or_create_asset_by_key(asset)
         @asset.lock
         @asset.write("", "application/x-directory")
@@ -243,7 +210,7 @@ module Smoke
         if params.has_key?('acl')
           @asset = @bucket.assets.find_by_key(asset)
           respond_error(:NoSuchKey) if @asset.nil?
-          respond_error(:AccessDenied) unless @user.has_permission_to :write_acl, @asset
+          require_acl :write_acl, @asset
           begin
             Acl.from_xml(request.body, @asset) do |acl|
               acl.save!
@@ -253,7 +220,7 @@ module Smoke
           end
           respond_ok
         else
-          respond_error(:AccessDenied) unless @user.has_permission_to :write_acl, @bucket
+          require_acl :write_acl, @bucket
           @amz = env['smoke.amz_headers']
           @directive = @amz['x-amz-metadata-directive']
           
@@ -279,17 +246,18 @@ module Smoke
       
       delete '/:bucket/*' do |bucket,asset|
         @user = request.env['smoke.user']
-        @bucket = Bucket.find_by_name(bucket)
+        @bucket = SmBucket.find_by_name(bucket)
         respond_error(:NoSuchBucket) if @bucket.nil?
         log_access(:PUT, @user, @bucket)
-        @asset = @bucket.assets.find_by_key(asset)
+        @asset = SmObject.find(:object_key => asset, :bucket_id => @bucket.id)
         respond_error(:NoSuchKey) if @asset.nil?
-        respond_error(:AccessDenied) unless @user.has_permission_to :write, @asset
+        require_acl :write, @bucket
         @asset.lock
-        @asset.mark_for_delete
+        @asset.trash
         @asset.unlock
         respond_ok
       end
     end
+    require_relative 'actions/get_service'
   end
 end

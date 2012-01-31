@@ -61,7 +61,7 @@ describe "Smoke::SmBucket" do
     @obj1.etag.should == etag
     @obj1.size.should == 19971
     
-    @obj1.delete
+    @obj1.trash
     File.exists?(@obj1.active_path).should be_false
     File.exists?(@obj1.trash_path).should be_true
     @obj1.path.should == @obj1.trash_path

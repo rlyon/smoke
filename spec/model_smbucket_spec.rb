@@ -94,6 +94,21 @@ describe "Smoke::SmBucket" do
     objects.include?(@obj10).should == true
   end
   
+  it "should return all of it's objects if prefix is nil" do
+    objects = @bucket.objects :prefix => nil
+    objects.size.should == 10
+    objects.include?(@obj1).should == true
+    objects.include?(@obj2).should == true
+    objects.include?(@obj3).should == true
+    objects.include?(@obj4).should == true
+    objects.include?(@obj5).should == true
+    objects.include?(@obj6).should == true
+    objects.include?(@obj7).should == true
+    objects.include?(@obj8).should == true
+    objects.include?(@obj9).should == true
+    objects.include?(@obj10).should == true
+  end
+  
   it "should return all of it's objects through cache" do
     objects = @bucket.objects(:use_cache => true)
     objects.size.should == 10

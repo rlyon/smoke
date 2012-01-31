@@ -19,7 +19,7 @@ describe "Smoke::User" do
     @user.username.should == "mocky"
     @user.display_name.should == nil
     @user.email.should == nil
-    @user.access_id.length.should == 24
+    @user.access_id.length.should == 20
     @user.secret_key.length.should == 40
   end
   

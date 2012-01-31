@@ -1,6 +1,6 @@
 require 'pp'
 module Smoke
-  module Server
+  module S3
     class Auth
       def initialize(app, config = {})
         @app = app
@@ -22,7 +22,7 @@ module Smoke
         return error(env, :MissingSecurityHeader) unless request.has_auth?
         request.find_user
         return error(env, :NotSignedUp) unless request.has_user?
-        return error(env, :AccountProblem) unless request.env['smoke.user'].is_active?
+        return error(env, :AccountProblem) unless request.env['smoke.user'].active?
         # pp request
         if request.valid?
           return @app.call(env)

@@ -12,6 +12,7 @@ module Smoke
   autoload :Connection,       'adapters/mongo'
   autoload :Document,         'document'
   autoload :S3Exception,      'exceptions'
+  autoload :Signature,        'signature'
   autoload :User,             'models/user'
   autoload :SmBucket,         'models/smbucket'
   autoload :SmObject,         'models/smobject'
@@ -30,7 +31,8 @@ module Smoke
   end
 
   module S3
-    # Fill me when refactoring is complete
+    autoload :App,            's3/app.rb'
+    autoload :Auth,           's3/auth.rb'
   end
 
   module Web
@@ -42,6 +44,11 @@ module Smoke
   end
   
   extend Connection
+end
+
+module Sinatra
+  autoload :ResponseHelper,   'helpers/response'
+  autoload :FetchHelper,      'helpers/fetch'
 end
 
 Dir[File.join(File.dirname(__FILE__), 'extensions', '*.rb')].each do |extension|

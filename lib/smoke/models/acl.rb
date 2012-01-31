@@ -1,13 +1,10 @@
 module Smoke
-  class Acl < ActiveRecord::Base
+  class Acl
     include Smoke::Document
     
     key :permission, String, :default => "read"
     key :user_id, String
     key :obj_id, String
-    
-    #validates :email, :presence => true
-    #validates :permission, :presence => true
     
     # class << self
 #           

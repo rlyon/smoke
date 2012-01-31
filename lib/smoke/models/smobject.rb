@@ -14,7 +14,7 @@ module Smoke
       @bucket ||= SmBucket.find(:_id => self.bucket_id)
     end
     
-    def delete
+    def trash
       trash_object
     end
       
