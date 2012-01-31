@@ -70,15 +70,11 @@ module Smoke
           @prefix = params.has_key?('prefix') ? params['prefix'] : nil
 
           unless @delimited
-            @assets = SmObject.where(:bucket_id => @bucket.id, :deleted => false)
+            @objects = @bucket.objects :prefix => @prefix
             @common_prefixes = []
           else
-            @assets = @bucket.objects :prefix => @prefix
+            @objects = @bucket.objects :prefix => @prefix
             @common_prefixes = @bucket.common_prefixes @prefix
-            puts @prefix.inspect
-            puts @bucket.inspect
-            puts @assets.inspect
-            puts @common_prefixes.inspect
           end
           
           erb :get_bucket
@@ -111,8 +107,8 @@ module Smoke
            @acls << @object.bucket.acls
            erb :get_access_control_list
         else
-          etag @asset.etag
-          send_file @asset.path, :type => @asset.content_type, :filename => @asset.filename
+          etag @object.etag
+          send_file @object.path, :type => @object.content_type, :filename => @object.filename
         end
       end
       
@@ -244,17 +240,12 @@ module Smoke
         end   
       end
       
-      delete '/:bucket/*' do |bucket,asset|
-        @user = request.env['smoke.user']
-        @bucket = SmBucket.find_by_name(bucket)
-        respond_error(:NoSuchBucket) if @bucket.nil?
-        log_access(:PUT, @user, @bucket)
-        @asset = SmObject.find(:object_key => asset, :bucket_id => @bucket.id)
-        respond_error(:NoSuchKey) if @asset.nil?
-        require_acl :write, @bucket
-        @asset.lock
-        @asset.trash
-        @asset.unlock
+      delete '/:bucket/*' do |bucket,object|
+        setup :bucket => bucket, :object => object
+        require_acl :write, @object
+        @object.lock
+        @object.trash
+        @object.unlock
         respond_ok
       end
     end

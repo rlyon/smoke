@@ -10,6 +10,8 @@ module Sinatra
       if args.has_key?(:object)
         @object = object(args[:object])
       end
+      
+      @prefix = params.has_key?('prefix') ? params['prefix'] : ''
     end
     
     def user

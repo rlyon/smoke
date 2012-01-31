@@ -8,11 +8,11 @@ module Smoke
       end
       
       def allow(user, acl)
-        acl = Acl.new(:user_id => user.id, :obj_id => self.id, :permission => acl)
+        acl = Acl.new(:user_id => user.id, :obj_id => self.id, :permission => acl.to_s)
         acl.save
       end
       
-      def acls(*args)
+      def acls(args = {})
         args.include_only(:refresh)
         if args.include?(:refresh)
           @acls = Acl.where(:obj_id => self.id)

@@ -4,16 +4,16 @@ describe "Smoke::SmBucket" do
   
   before(:each) do
     @bucket = Smoke::SmBucket.new(:name => "bucket")
-    @obj1 = Smoke::SmObject.new(:bucket_id => @bucket.id, :key => 'path/to/my/super/cool/file.txt')
-    @obj2 = Smoke::SmObject.new(:bucket_id => @bucket.id, :key => 'path/to/my/super/cool/other.txt')
-    @obj3 = Smoke::SmObject.new(:bucket_id => @bucket.id, :key => 'path/to/my/super/cool/mine.txt')
-    @obj4 = Smoke::SmObject.new(:bucket_id => @bucket.id, :key => 'path/to/this/file.txt')
-    @obj5 = Smoke::SmObject.new(:bucket_id => @bucket.id, :key => 'path/to/this/other.txt')
-    @obj6 = Smoke::SmObject.new(:bucket_id => @bucket.id, :key => 'path/to/this/mine.txt')
-    @obj7 = Smoke::SmObject.new(:bucket_id => @bucket.id, :key => 'path/to/file.txt')
-    @obj8 = Smoke::SmObject.new(:bucket_id => @bucket.id, :key => 'path/to/other.txt')
-    @obj9 = Smoke::SmObject.new(:bucket_id => @bucket.id, :key => 'path/to/mine.txt')
-    @obj10 = Smoke::SmObject.new(:bucket_id => @bucket.id, :key => 'path/to/placeholder/', :is_placeholder => true)
+    @obj1 = Smoke::SmObject.new(:bucket_id => @bucket.id, :object_key => 'path/to/my/super/cool/file.txt')
+    @obj2 = Smoke::SmObject.new(:bucket_id => @bucket.id, :object_key => 'path/to/my/super/cool/other.txt')
+    @obj3 = Smoke::SmObject.new(:bucket_id => @bucket.id, :object_key => 'path/to/my/super/cool/mine.txt')
+    @obj4 = Smoke::SmObject.new(:bucket_id => @bucket.id, :object_key => 'path/to/this/file.txt')
+    @obj5 = Smoke::SmObject.new(:bucket_id => @bucket.id, :object_key => 'path/to/this/other.txt')
+    @obj6 = Smoke::SmObject.new(:bucket_id => @bucket.id, :object_key => 'path/to/this/mine.txt')
+    @obj7 = Smoke::SmObject.new(:bucket_id => @bucket.id, :object_key => 'path/to/file.txt')
+    @obj8 = Smoke::SmObject.new(:bucket_id => @bucket.id, :object_key => 'path/to/other.txt')
+    @obj9 = Smoke::SmObject.new(:bucket_id => @bucket.id, :object_key => 'path/to/mine.txt')
+    @obj10 = Smoke::SmObject.new(:bucket_id => @bucket.id, :object_key => 'path/to/placeholder/', :is_placeholder => true)
     @bucket.save
     @obj1.save
     @obj2.save

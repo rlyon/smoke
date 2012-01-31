@@ -100,7 +100,8 @@ describe "S3::App" do
   
   it "should respond to / and list all buckets including those with shared assets" do
     @asset = Smoke::SmObject.find_by_object_key('path/to/my/file.txt')
-    @asset.allow(@bocky, "read")
+    @asset.allow(@bocky, :read)
+    @asset.save
     
     get '/', {}, {'smoke.user' => @bocky}
     last_response.should be_ok
@@ -152,7 +153,6 @@ describe "S3::App" do
     get '/mocky/', {'delimiter' => '/'}, {'smoke.user' => @user}
     last_response.should be_ok
     h = Hash.from_xml_string(last_response.body)
-    puts h.inspect
     h.has_key?('ListBucketResult').should be_true
     h['ListBucketResult']['Name'].should == "mocky"
     h['ListBucketResult']['Prefix'].should == nil
@@ -161,7 +161,7 @@ describe "S3::App" do
     h['ListBucketResult'].has_key?('Contents').should be_true
     c = h['ListBucketResult']['Contents']
     # length doesn't work here as there is only on value and c should be a hash
-    c.should be_a(Hash)
+    c.should be_a(Array)
     h['ListBucketResult'].has_key?('CommonPrefixes').should be_true
     cp =h['ListBucketResult']['CommonPrefixes']
     cp.length.should == 2

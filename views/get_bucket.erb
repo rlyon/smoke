@@ -1,27 +1,25 @@
 <ListBucketResult xmlns="http://doc.s3.amazonaws.com/2006-03-01">
   <Name><%= @bucket.name %></Name>
-  <Prefix></Prefix>
+  <Prefix><%= @prefix %></Prefix>
   <Marker></Marker>
   <MaxKeys>100</MaxKeys>
   <IsTruncated>false</IsTruncated>
-	<% @assets.each do |asset| %>
+  <% @objects.each do |object| %>
   <Contents>
-    <Key><%= asset.key %></Key>
-    <LastModified><%= asset.updated_at.to_z %></LastModified>
-    <ETag><%= asset.etag %></ETag>
-    <Size><%= asset.size %></Size>
-    <StorageClass><%= asset.storage_class.upcase %></StorageClass>
+    <Key><%= object.basename %></Key>
+    <LastModified><%= object.updated_at.to_z %></LastModified>
+    <ETag><%= object.etag %></ETag>
+    <Size><%= object.size %></Size>
+    <StorageClass><%= object.storage_class.upcase %></StorageClass>
     <Owner>
-      <ID><%= asset.user.access_id %></ID>
-      <DisplayName><%= asset.user.display_name %></DisplayName>
+      <ID><%= object.user.access_id %></ID>
+      <DisplayName><%= object.user.display_name %></DisplayName>
     </Owner>
   </Contents>
-	<% end %>
-	<% if @delimited %>
-	<% @common_prefixes.each do |prefix| %>
+  <% end %>
+  <% @common_prefixes.each do |prefix| %>
   <CommonPrefixes>
     <Prefix><%= prefix %></Prefix>
   </CommonPrefixes>
-	<% end %>
-	<% end %>
+  <% end %>
 </ListBucketResult>

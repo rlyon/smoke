@@ -97,8 +97,14 @@ module Smoke
       buckets = []
       acls = Acl.where(:user_id => self.id)
       acls.each do |acl|
-        bucket = SmBucket.find(:_id => acl.obj_id)
-        buckets << bucket unless bucket.nil? || buckets.include?(bucket)
+        
+        object = SmObject.find(:_id => acl.obj_id)
+        unless object.nil?
+          buckets << object.bucket unless buckets.include?(object.bucket)
+        else
+          bucket = SmBucket.find(:_id => acl.obj_id)
+          buckets << bucket unless bucket.nil? || buckets.include?(bucket)
+        end
       end
       buckets
     end

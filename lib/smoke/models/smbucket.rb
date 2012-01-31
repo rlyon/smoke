@@ -34,7 +34,7 @@ module Smoke
       prefixes = []
       rx = Regexp.new('^' + prefix + '[a-zA-Z0-9_\.\-]*\/')
       objects(:use_cache => false, :prefix => prefix, :only_common => true).each do |object|
-        p = rx.match(object.key).to_s
+        p = rx.match(object.object_key).to_s
         prefixes << p unless p.empty? || prefixes.include?(p)
       end
       prefixes
@@ -74,7 +74,7 @@ module Smoke
       
       # Update the query with the bucket id
       query = {}
-      query[:key] = rx 
+      query[:object_key] = rx 
       query[:bucket_id] = self.id
       
       # Set the sorting direction... put this back in connector ???
