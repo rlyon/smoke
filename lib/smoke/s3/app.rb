@@ -114,7 +114,7 @@ module Smoke
       
       # Put operations on the bucket
       put '/:bucket/?' do |bucket|
-        setup :bucket => bucket
+        setup :bucket => bucket, :noraise => true
         
         # Sets versioning for the bucket
         if params.has_key?('versioning')
@@ -164,7 +164,7 @@ module Smoke
             respond_error(:TooManyBuckets)
           end
           
-          @bucket = Bucket.find_by_name(bucket)
+          @bucket = SmBucket.find_by_name(bucket)
           if @bucket.nil?
             @bucket = @user.buckets.new(:name => bucket)
             if params.has_key('x-amz-acl')

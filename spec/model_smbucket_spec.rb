@@ -35,9 +35,9 @@ describe "Smoke::SmBucket" do
   it "should have the correct defaults set" do
     @bucket.name.should == "bucket"
     @bucket.user_id.should == nil
-    @bucket.is_logging.should == false
-    @bucket.is_versioning.should == false
-    @bucket.is_notifying.should == false
+    @bucket.logging.should == false
+    @bucket.versioning.should == false
+    @bucket.notifying.should == false
     @bucket.storage.should == "local"
     @bucket.location.should == "unset"
     @bucket.visibility.should == "private"

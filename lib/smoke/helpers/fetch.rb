@@ -2,6 +2,7 @@ module Sinatra
   module FetchHelper
     def setup(args = {})
       @user = user
+      respond_error(:NotSignedUp) if user.nil?
       @buckets = user.buckets(:use_cache => false)
       if args.has_key?(:bucket)
         @bucket = bucket(args[:bucket])

@@ -21,9 +21,9 @@ module Smoke
     
     key :name, String
     key :user_id, String
-    key :is_logging, Boolean, :default => false
-    key :is_versioning, Boolean, :default => false
-    key :is_notifying, Boolean, :default => false
+    key :logging, Boolean, :default => false
+    key :versioning, Boolean, :default => false
+    key :notifying, Boolean, :default => false
     key :storage, String, :default => "local"
     key :location, String, :default => "unset"
     key :visibility, String, :default => "private"
@@ -45,12 +45,13 @@ module Smoke
     end
     
     def logging_from_xml(xml)
-      l = Hash.from_xml(xml)
-      raise S3Exception.new(:InvalidRequest, 'Logging tags not found.') unless v.has_key?('BucketLoggingStatus')
-      if l.has_key?('LoggingEnabled')
-        self.is_logging = true
+      l = Hash.from_xml_string(xml)
+      raise S3Exception.new(:InvalidRequest, 'Logging tags not found.') unless l.has_key?('BucketLoggingStatus')
+      ls = l['BucketLoggingStatus']
+      if ls && ls.has_key?('LoggingEnabled')
+        self.logging = true
       else
-        self.is_logging = false
+        self.logging = false
       end
       save
     end
@@ -90,13 +91,13 @@ module Smoke
     end
     
     def versioning_from_xml(xml)
-      v = Hash.from_xml(xml)
+      v = Hash.from_xml_string(xml)
       raise S3Exception.new(:InvalidRequest, 'Versioning tags not found.') unless v.has_key?('VersioningConfiguration')
       case v['VersioningConfiguration']['Status']
       when "Enabled"
-        self.is_versioning = true
+        self.versioning = true
       when "Suspended"
-        self.is_versioning = false
+        self.s3.versioning = false
       else
         raise S3Exception.new(:InvalidRequest, 'Invalid status received.')
       end

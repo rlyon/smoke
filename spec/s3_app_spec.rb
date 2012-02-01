@@ -202,6 +202,52 @@ describe "S3::App" do
     Hash.from_xml_string(last_response.body)['Error']['Code'].should == "InvalidArgument"
   end
   
+  it "should create a bucket" do
+    @user.max_buckets = 3
+    @user.save
+    put  '/testbucket/', '', {'smoke.user' => @user}
+    puts last_response.inspect
+    last_response.should be_ok
+    testbucket = SmBucket.find_by_name('testbucket')
+    testbucket.should_not be_nil
+    @user.buckets.should.include testbucket
+  end
+  
+  it "should respond to get bucket logging" do
+    get '/mocky/', {'logging' => nil}, {'smoke.user' => @user}
+    last_response.should be_ok
+  end
+  
+  it "should disable bucket logging" do
+    @bucket.logging = true
+    @bucket.save
+    
+    # sanity check
+    bucket = Smoke::SmBucket.find_by_name('mocky')
+    bucket.logging?.should be_true
+    xml = '<?xml version="1.0" encoding="UTF-8"?><BucketLoggingStatus xmlns="http://doc.s3.amazonaws.com/2006-03-01" />'
+    put '/mocky/?logging', xml, {'smoke.user' => @user}
+    last_response.should be_ok
+    bucket = Smoke::SmBucket.find_by_name('mocky')
+    bucket.logging?.should be_false
+  end
+  
+  it "should enable bucket logging" do
+    # sanity check
+    bucket = Smoke::SmBucket.find_by_name('mocky')
+    bucket.logging?.should be_false
+    xml = '<?xml version="1.0" encoding="UTF-8"?><BucketLoggingStatus xmlns="http://doc.s3.amazonaws.com/2006-03-01"><LoggingEnabled></LoggingEnabled></BucketLoggingStatus>'
+    put '/mocky/?logging', xml, {'smoke.user' => @user}
+    last_response.should be_ok
+    bucket = Smoke::SmBucket.find_by_name('mocky')
+    bucket.logging?.should be_true
+  end
+  
+  it "should respond to put bucket notification" do
+    put '/mocky/', {'notification' => nil}, {'smoke.user' => @user}
+    last_response.should be_ok
+  end
+  
   ### Check some of the stubs
   it "get bucket should respond to paramater requestPayment" do
     get '/mocky/', {'requestPayment' => nil}, {'smoke.user' => @user}

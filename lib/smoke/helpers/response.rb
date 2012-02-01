@@ -132,8 +132,8 @@ module Sinatra
       logfile = SMOKE_CONFIG['logfiles'] + "/" + date.to_yearmonth
       File.open(logfile, 'a') { |f| f.write(line) }
       
-      if bucket.is_logging
-        bucket.log(line)
+      if bucket.logging?
+        #bucket.log(line)
       end
     end
   end
