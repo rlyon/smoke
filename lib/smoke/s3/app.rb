@@ -4,7 +4,7 @@ module Smoke
       helpers Sinatra::ResponseHelper
       helpers Sinatra::FetchHelper
       
-      set :views, [File.dirname(__FILE__) + '/../../../views']
+      set :views, [File.dirname(__FILE__) + '/views']
       
       # Put service to update user attributes or create a user if that user does
       # not already exist.  Users will have the ability to update their own profiles 

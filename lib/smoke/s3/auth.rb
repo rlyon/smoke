@@ -38,7 +38,7 @@ module Smoke
         @resource = env['smoke.path']
         @status = response[0]
         @message = response[1]
-        file = File.dirname(__FILE__) + '/../../../views/error.erb'
+        file = File.dirname(__FILE__) + '/views/error.erb'
         template = ::ERB.new(File.read(file))
         body = template.result(binding)
         content = [ body ]
