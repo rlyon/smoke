@@ -11,6 +11,21 @@ describe "Hash monkey: include_only?" do
   end
 end
 
+
+describe "Hash monkey: stringify keys" do
+  it "should turn symbols into key" do
+    h = {:a => 0, :b => 1, :c => 2}
+    h.stringify_keys
+    h.keys.size.should == 3
+    h.has_key?(:a).should be_false
+    h.has_key?(:b).should be_false
+    h.has_key?(:c).should be_false
+    h.has_key?('a').should be_true
+    h.has_key?('b').should be_true
+    h.has_key?('c').should be_true
+  end
+end
+
 describe "Hash monkey: include_only" do
   it "shouldn't raise exception if only the provided keys are found in the hash" do
     h = {:a => 0, :b => 1, :c => 3}
@@ -34,6 +49,20 @@ describe "Hash monkey: from_xml_string" do
     error['Message'].should == "World"
     error.has_key?('MyDate').should be_true
     error['MyDate'].should == "Now"
+  end
+  
+  it "should raise exception on invalid xml" do
+    xml = "<Error><Code>Hello</Code><Message>World</Message><MyDate>Now</BADTAG></Error>"
+    expect { h = Hash.from_xml_string(xml) ; puts h.inspect }.to raise_error
+  end
+  
+  it "should parse attributes" do
+    xml = "<Tag attr=\"hello world\">Hello</Tag>"
+    h = Hash.from_xml_string(xml)
+    tag = h['Tag']
+    tag.has_key?('attr')
+    tag['attr'].should == "hello world"
+    tag['text'].should == "Hello"
   end
   
   it "should handle multiple nested entries correctly" do

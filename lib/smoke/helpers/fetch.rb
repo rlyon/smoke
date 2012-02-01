@@ -6,12 +6,10 @@ module Sinatra
       @buckets = user.buckets(:use_cache => false)
       if args.has_key?(:bucket)
         @bucket = bucket(args[:bucket])
+        if args.has_key?(:object)
+          @object = object(args[:object])
+        end
       end
-      
-      if args.has_key?(:object)
-        @object = object(args[:object])
-      end
-      
       @prefix = params.has_key?('prefix') ? params['prefix'] : ''
     end
     
@@ -20,10 +18,12 @@ module Sinatra
     end
     
     def bucket(name)
-      bucket = Smoke::SmBucket.find_by_name(name)  
-      respond_error(:NoSuchBucket) if bucket.nil?
-      respond_error(:AccessDenied) unless user.has_permission_to? :read, bucket
-      log_access(:GET, user, bucket)
+      bucket = Smoke::SmBucket.find_by_name(name)
+      unless bucket.nil?
+        respond_error(:NoSuchBucket) if bucket.nil?
+        respond_error(:AccessDenied) unless user.has_permission_to? :read, bucket
+        log_access(:GET, user, bucket)
+      end
       bucket
     end
     

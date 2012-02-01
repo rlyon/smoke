@@ -62,22 +62,6 @@ describe "S3::App" do
     @app ||= Smoke::S3::App.new
   end
   
-  #
-  # Since we are only testing the app itself, I'm assuming that the 
-  # rack authentication has already set everything it needs (hence the
-  # rack request parameters being set in the request)
-  #
-  
-  it "should respond to /" do
-    get '/', {}, {'smoke.user' => @user}
-    last_response.should be_ok
-    h = Hash.from_xml_string(last_response.body)
-    h.has_key?('ListAllMyBucketResult').should be_true
-    r = h['ListAllMyBucketResult']
-    r.has_key?('Buckets').should be_true
-    r['Buckets']['Bucket'].length.should == 2
-  end
-  
   it "should respond to / and list all buckets including shared" do
     @bucket.allow(@bocky, "read")
     
@@ -206,11 +190,18 @@ describe "S3::App" do
     @user.max_buckets = 3
     @user.save
     put  '/testbucket/', '', {'smoke.user' => @user}
-    puts last_response.inspect
     last_response.should be_ok
-    testbucket = SmBucket.find_by_name('testbucket')
+    testbucket = Smoke::SmBucket.find_by_name('testbucket')
     testbucket.should_not be_nil
-    @user.buckets.should.include testbucket
+    @user.buckets.include?(testbucket).should be_true
+  end
+  
+  it "should not allow the creation of more than the max buckets" do
+    put  '/testbucket/', '', {'smoke.user' => @user}
+    last_response.should_not be_ok
+    Hash.from_xml_string(last_response.body)['Error']['Code'].should == "TooManyBuckets"
+    testbucket = Smoke::SmBucket.find_by_name('testbucket')
+    testbucket.should be_nil
   end
   
   it "should respond to get bucket logging" do
@@ -245,7 +236,8 @@ describe "S3::App" do
   
   it "should respond to put bucket notification" do
     put '/mocky/', {'notification' => nil}, {'smoke.user' => @user}
-    last_response.should be_ok
+    last_response.should_not be_ok
+    Hash.from_xml_string(last_response.body)['Error']['Code'].should == "NotImplemented"
   end
   
   ### Check some of the stubs

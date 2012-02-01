@@ -114,7 +114,7 @@ module Smoke
       
       # Put operations on the bucket
       put '/:bucket/?' do |bucket|
-        setup :bucket => bucket, :noraise => true
+        setup :bucket => bucket
         
         # Sets versioning for the bucket
         if params.has_key?('versioning')
@@ -166,8 +166,8 @@ module Smoke
           
           @bucket = SmBucket.find_by_name(bucket)
           if @bucket.nil?
-            @bucket = @user.buckets.new(:name => bucket)
-            if params.has_key('x-amz-acl')
+            @bucket = SmBucket.new(:name => bucket, :user_id => @user.id)
+            if params.has_key?('x-amz-acl')
               # Sets public visibility.  This is read only, by default this is
               # private.
               @bucket.visibility = params['x-amz-acl']

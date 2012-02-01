@@ -13,17 +13,17 @@ module Smoke
         nil     => nil
       }
 
-      def to_mongo(value)
-        if value.is_a?(Boolean)
-          value
-        else
-          Mapping[value]
-        end
-      end
-
-      def from_mongo(value)
-        value.nil? ? nil : !!value
-      end
+      # def to_mongo(value)
+      #   if value.is_a?(Boolean)
+      #     value
+      #   else
+      #     Mapping[value]
+      #   end
+      # end
+      # 
+      # def from_mongo(value)
+      #   value.nil? ? nil : !!value
+      # end
 
     end
   end

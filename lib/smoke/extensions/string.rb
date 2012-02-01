@@ -1,15 +1,15 @@
 class String
-  def uncamelize
-    uncameled = self.each_char.inject("") do |result,c|
-      unless "#{c}" =~ /^[A-Z]$/
-        result << "#{c}"
-      else
-        result << "_" unless result.empty?
-        result << "#{c}".downcase
-      end
-    end
-    uncameled
-  end
+  # def uncamelize
+  #   uncameled = self.each_char.inject("") do |result,c|
+  #     unless "#{c}" =~ /^[A-Z]$/
+  #       result << "#{c}"
+  #     else
+  #       result << "_" unless result.empty?
+  #       result << "#{c}".downcase
+  #     end
+  #   end
+  #   uncameled
+  # end
   
   class << self
     def hex(args = { :length => 24, :case => :upper })

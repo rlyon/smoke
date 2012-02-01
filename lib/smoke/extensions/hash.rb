@@ -1,9 +1,9 @@
 class Hash
   def stringify_keys
-    inject({}) do |options, (key,value)|
-      options[key.to_s] = value
-      options
+    keys.each do |key|
+      self[(key.to_s rescue key) || key] = delete(key)
     end
+    self
   end
   
   # From rails active_support.  Destructively convert all keys to symbols as long as they respond to to_sym
@@ -40,13 +40,16 @@ class Hash
     # https://gist.github.com/819999
     def from_xml_string(xml)
       begin
-        result = Nokogiri::XML(xml)
+        result = Nokogiri::XML(xml) do |config|
+          config.strict.noent
+        end
         return { result.root.name => xml_node_to_hash(result.root)}
       rescue Exception => e
         raise "Invalid xml"
       end
     end
-
+    
+    # https://gist.github.com/819999
     def xml_node_to_hash(node)
       # If we are at the root of the document, start the hash 
       if node.element?
