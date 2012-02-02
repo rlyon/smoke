@@ -10,10 +10,11 @@ module Smoke
         klass.key :content_type, String, :default => "application/octet-stream"
         klass.key :locked, Boolean, :default => false
         klass.key :delete_marker, Boolean, :default => false
-        klass.key :deleted_at, Time, :default => Time.now
+        klass.key :deleted_at, Time, :default => nil
         klass.key :is_placeholder, Boolean, :default => false
         klass.key :is_version, Boolean, :default => false
         klass.key :version_string, String, :default => String.random(:length => 32)
+        klass.key :versioned_at, Time, :default => Time.now
       end
      
       def active_dir
@@ -107,17 +108,9 @@ module Smoke
         unless self.etag == digest
           # If the file exists, I'm assuming the asset attributes are current...
           if File.exist?(active_path) && versioning
-            # Create a new version.
-            #@version = self.versions.new(
-            #  :version_string => "#{String.random :length => 32}", 
-            #  :etag => self.etag,
-            #  :size => self.size,
-            #  :content_type => self.content_type
-            #)
-            #@version.save
-            # Move the current version before we copy the temp file back.  Really should
-            # have a background process to compress the files to save space.
-            FileUtils.move path, @version.path
+            unless self.mkversion
+              raise "[LocalFileStore.store_object]: Unable to create version."
+            end
           end
           # There's got to be a better way to do this...  I need to rewind so I can get the size
           # Otherwise it gives me the remaining bytes, which is 0.
@@ -150,16 +143,25 @@ module Smoke
         self.save
       end
       
-      def mkversion(path, version)
-        new_file = self.mimic(:except => [:is_version, :version_string, :locked, :delete_marker])
+      def mkversion
+        new_file = self.mimic(:except => [:is_version, :version_string, :versioned_at, :locked, :delete_marker])
         new_file.is_version = true
-        new_file.save
-        FileUtils.cp self.active_path, self.version_path
-        new_file
+        new_file.versioned_at = Time.now
+        
+        FileUtils.cp self.active_path, new_file.version_path
+        unless new_file.save
+          nil
+        else
+          new_file
+        end
+      end
+      
+      def versions
+        @objects = SmObject.where(:object_key => self.object_key, :is_version => true)
       end
       
       def version_path
-        "#{self.dirname}/.#{self.basename}.#{self.version_string}"
+        "#{self.active_dir}/.#{self.basename}.#{self.version_string}"
       end
         
     end    

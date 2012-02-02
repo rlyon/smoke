@@ -48,6 +48,9 @@ describe "S3::App" do
     @dir = Smoke::SmObject.new(:object_key => 'path/to/my/placeholder/', :user_id => @user.id, :bucket_id => @bucket.id, :size => 100)
     @dir.save
     
+    @obj_ver = Smoke::SmObject.new(:object_key => 'example/file.txt', :user_id => @user.id, :bucket_id => @bucket.id, :size => 100, :is_version => true)
+    @obj_ver.save
+    
   end
   
   after(:each) do
@@ -133,6 +136,12 @@ describe "S3::App" do
     c.length.should == 4
   end
   
+  it "should have a version for example/file.txt" do
+    @asset = Smoke::SmObject.find_by_object_key('example/file.txt')
+    @asset.versions.length.should == 1
+    @asset.versions.include?(@obj_ver).should be_true
+  end
+  
   it "should only list the files at the prefix with a list of common prefixes when the delimiter is present" do
     get '/mocky/', {'delimiter' => '/'}, {'smoke.user' => @user}
     last_response.should be_ok
@@ -147,7 +156,7 @@ describe "S3::App" do
     # length doesn't work here as there is only on value and c should be a hash
     c.should be_a(Array)
     h['ListBucketResult'].has_key?('CommonPrefixes').should be_true
-    cp =h['ListBucketResult']['CommonPrefixes']
+    cp = h['ListBucketResult']['CommonPrefixes']
     cp.length.should == 2
     cp.first['Prefix'].should == 'path/'
     cp.last['Prefix'].should == 'example/'
@@ -240,7 +249,7 @@ describe "S3::App" do
     @newfile.path.should == @newfile.active_path
   end
   
-  it "should overwrite a file" do
+  it "should overwrite a file if versioning is not enabled" do
     file = 'testfiles/bacon.txt'
     etag = 'd4c228bdc5749ea3b20c3e07d5f1eb65'
     data = File.new(File.dirname(__FILE__) + '/' + file, 'r')
@@ -262,6 +271,43 @@ describe "S3::App" do
     File.exists?("#{@newfile.path}.upload").should be_false
     @newfile.etag.should == etag
     @newfile.path.should == @newfile.active_path
+  end
+  
+  it "should create a new version if verioning is created" do
+    mocky = Smoke::SmBucket.find_by_name('mocky')
+    mocky.versioning = true
+    mocky.save
+    
+    file_one = 'testfiles/bacon.txt'
+    etag_one = 'd4c228bdc5749ea3b20c3e07d5f1eb65'
+    data = File.new(File.dirname(__FILE__) + '/' + file_one, 'r')
+    put '/mocky/file.txt', data.read, {'smoke.user' => @user}
+    last_response.should be_ok
+    @newfile = Smoke::SmObject.find_by_object_key('file.txt')
+    File.exists?(@newfile.path).should be_true
+    File.exists?("#{@newfile.path}.upload").should be_false
+    @newfile.etag.should == etag_one
+    @newfile.path.should == @newfile.active_path
+    
+    file_two = 'testfiles/lorem.txt'
+    etag_two = '8c1d67521736f5cfaf5367982eba302f'
+    data = File.new(File.dirname(__FILE__) + '/' + file_two, 'r')
+    put '/mocky/file.txt', data.read, {'smoke.user' => @user}
+    last_response.should be_ok
+    
+    @newfile = Smoke::SmObject.find_by_object_key('file.txt')
+    @newfile.etag.should == etag_two
+    @newfile.path.should == @newfile.active_path
+    
+    @newfile.versions.length.should == 1
+    @version = @newfile.versions.first
+    @version.etag.should == etag_one
+    @version.path.should == @version.version_path
+    @newfile.etag.should == etag_two
+    
+    File.exists?(@newfile.path).should be_true
+    File.exists?(@version.path).should be_true
+    File.exists?("#{@newfile.path}.upload").should be_false
   end
   
   it "should just delete the file that was uploaded if etags match" do

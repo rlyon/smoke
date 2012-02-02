@@ -23,7 +23,7 @@ module Smoke
     end
       
     def store(data)
-      store_object(:data => data, :etag => self.etag ) do |digest,size|
+      store_object(:data => data, :etag => self.etag, :versioning => bucket.versioning? ) do |digest,size|
         self.size = size
         self.etag = digest
         self.save

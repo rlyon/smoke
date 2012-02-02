@@ -87,13 +87,12 @@ module Smoke
       def mimic(args = {})
         args.include_only(:except)
         except = args.has_key?(:except) ? args[:except] : []
-        new_obj = self.class.new
-        attrs = self.attributes.dup
+        attrs = self.attributes.dup.symbolize_keys!
         # Always remove _id
         attrs.delete(:_id)
-        # Remove the requested
-        args[:except].each { |a| attrs.delete(a) if attrs.has_key?(a) } 
-        new_obj.attributes = attrs
+        # Remove the requested attributes so they are not duplicated
+        args[:except].each { |a| attrs.delete(a) if attrs.has_key?(a) }
+        new_obj = self.class.new(attrs)
         new_obj
       end
 

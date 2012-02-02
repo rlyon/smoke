@@ -68,17 +68,6 @@ module Smoke
       bucket_names.include?(name)
     end
     
-    def objects
-      args.include_only(:use_cache)
-      # Use a special all method which gets shared buckets as well
-      if args.include?(:use_cache) && !args[:use_cache]
-        @objects = SmObject.all(:user_id => self.id)
-      else
-        @objects ||= SmObject.all(:user_id => self.id)
-      end
-      @objects
-    end
-    
     def password_salt
       self.enc_password.split(':').first
     end

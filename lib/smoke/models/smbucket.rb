@@ -57,7 +57,7 @@ module Smoke
     end
     
     def objects(args = {})
-      args.include_only(:use_cache, :prefix, :sort, :recursive, :only_common)
+      args.include_only(:use_cache, :prefix, :sort, :recursive, :only_common, :versions)
       
       recurse = args.has_key?(:recursive) ? args[:recursive] : true
       only_common = args.has_key?(:only_common) ? args[:only_common] : false
@@ -77,6 +77,7 @@ module Smoke
       query = {}
       query[:object_key] = rx 
       query[:bucket_id] = self.id
+      query[:is_version] = args.include?(:versions) ? args[:versions] : false
       
       # Set the sorting direction... put this back in connector ???
       sort = [["key", Mongo::ASCENDING]]
