@@ -158,7 +158,7 @@ describe "S3::App" do
     file = 'testfiles/bacon.txt'
     etag = 'd4c228bdc5749ea3b20c3e07d5f1eb65'
     data = File.new(File.dirname(__FILE__) + '/' + file, 'r')
-    @object.store(data,etag)
+    @object.store(data)
     
     delete '/mocky/path/to/my/file.txt', {}, {'smoke.user' => @user}
     last_response.should be_ok
@@ -202,6 +202,90 @@ describe "S3::App" do
     Hash.from_xml_string(last_response.body)['Error']['Code'].should == "TooManyBuckets"
     testbucket = Smoke::SmBucket.find_by_name('testbucket')
     testbucket.should be_nil
+  end
+  
+  it "should save a file" do
+    file = 'testfiles/bacon.txt'
+    etag = 'd4c228bdc5749ea3b20c3e07d5f1eb65'
+    data = File.new(File.dirname(__FILE__) + '/' + file, 'r')
+    put '/mocky/bacon.txt', data.read, {'smoke.user' => @user}
+    last_response.should be_ok
+    @newfile = Smoke::SmObject.find_by_object_key('bacon.txt')
+    File.exists?(@newfile.path).should be_true
+    File.exists?("#{@newfile.path}.upload").should be_false
+    @newfile.path.should == @newfile.active_path
+  end
+  
+  it "shouldn't save a file to a bucket not owned by the user (without permission)" do
+    file = 'testfiles/bacon.txt'
+    etag = 'd4c228bdc5749ea3b20c3e07d5f1eb65'
+    data = File.new(File.dirname(__FILE__) + '/' + file, 'r')
+    put '/mocky/bacon.txt', data.read, {'smoke.user' => @bocky}
+    last_response.should_not be_ok
+    Hash.from_xml_string(last_response.body)['Error']['Code'].should == "AccessDenied"
+  end
+  
+  it "should save a file if the requestor has write privileges" do
+    bucket = Smoke::SmBucket.find_by_name('mocky')
+    bucket.allow(@bocky, "write")
+    
+    file = 'testfiles/bacon.txt'
+    etag = 'd4c228bdc5749ea3b20c3e07d5f1eb65'
+    data = File.new(File.dirname(__FILE__) + '/' + file, 'r')
+    put '/mocky/bacon.txt', data.read, {'smoke.user' => @bocky}
+    last_response.should be_ok
+    @newfile = Smoke::SmObject.find_by_object_key('bacon.txt')
+    File.exists?(@newfile.path).should be_true
+    File.exists?("#{@newfile.path}.upload").should be_false
+    @newfile.path.should == @newfile.active_path
+  end
+  
+  it "should overwrite a file" do
+    file = 'testfiles/bacon.txt'
+    etag = 'd4c228bdc5749ea3b20c3e07d5f1eb65'
+    data = File.new(File.dirname(__FILE__) + '/' + file, 'r')
+    put '/mocky/file.txt', data.read, {'smoke.user' => @user}
+    last_response.should be_ok
+    @newfile = Smoke::SmObject.find_by_object_key('file.txt')
+    File.exists?(@newfile.path).should be_true
+    File.exists?("#{@newfile.path}.upload").should be_false
+    @newfile.etag.should == etag
+    @newfile.path.should == @newfile.active_path
+    
+    file = 'testfiles/lorem.txt'
+    etag = '8c1d67521736f5cfaf5367982eba302f'
+    data = File.new(File.dirname(__FILE__) + '/' + file, 'r')
+    put '/mocky/file.txt', data.read, {'smoke.user' => @user}
+    last_response.should be_ok
+    @newfile = Smoke::SmObject.find_by_object_key('file.txt')
+    File.exists?(@newfile.path).should be_true
+    File.exists?("#{@newfile.path}.upload").should be_false
+    @newfile.etag.should == etag
+    @newfile.path.should == @newfile.active_path
+  end
+  
+  it "should just delete the file that was uploaded if etags match" do
+    file = 'testfiles/bacon.txt'
+    etag = 'd4c228bdc5749ea3b20c3e07d5f1eb65'
+    data = File.new(File.dirname(__FILE__) + '/' + file, 'r')
+    put '/mocky/file.txt', data.read, {'smoke.user' => @user}
+    last_response.should be_ok
+    @newfile = Smoke::SmObject.find_by_object_key('file.txt')
+    File.exists?(@newfile.path).should be_true
+    File.exists?("#{@newfile.path}.upload").should be_false
+    @newfile.etag.should == etag
+    @newfile.path.should == @newfile.active_path
+    
+    file = 'testfiles/bacon.txt'
+    etag = 'd4c228bdc5749ea3b20c3e07d5f1eb65'
+    data = File.new(File.dirname(__FILE__) + '/' + file, 'r')
+    put '/mocky/file.txt', data.read, {'smoke.user' => @user}
+    last_response.should be_ok
+    @newfile = Smoke::SmObject.find_by_object_key('file.txt')
+    File.exists?(@newfile.path).should be_true
+    File.exists?("#{@newfile.path}.upload").should be_false
+    @newfile.etag.should == etag
+    @newfile.path.should == @newfile.active_path
   end
   
   it "should respond to get bucket logging" do

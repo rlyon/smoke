@@ -32,7 +32,7 @@ module Smoke
       
       def copy(args = {})
         args.include_only(:to)
-        raise "[LocalFileStore.move_object]: Destination must be specified" unless args.has_key?(:to)
+        raise "[LocalFileStore.move]: Destination must be specified" unless args.has_key?(:to)
         new_file = self.mimic(:except => [:is_version, :version_string, :object_key, :locked, :delete_marker])
         new_file.object_key = args[:to]
         new_file.save
@@ -63,10 +63,10 @@ module Smoke
         self.save
       end
             
-      def move_object(args = {})
+      def move(args = {})
         args.include_only(:source, :destination, :force)
-        raise "[LocalFileStore.move_object]: Source must be specified" unless args.has_key?(:source)
-        raise "[LocalFileStore.move_object]: Destination must be specified" unless args.has_key?(:destination)
+        raise "[LocalFileStore.move]: Source must be specified" unless args.has_key?(:source)
+        raise "[LocalFileStore.move]: Destination must be specified" unless args.has_key?(:destination)
         force = args.has_key?(:force) ? args[:force] : false
         FileUtils.move args[:source], args[:destination], :force => force
       end
@@ -104,7 +104,7 @@ module Smoke
       
         # Don't bother anything if the digest hasn't changed.  Should check
         # prior to writing the file.
-        if etag == digest
+        unless self.etag == digest
           # If the file exists, I'm assuming the asset attributes are current...
           if File.exist?(active_path) && versioning
             # Create a new version.
@@ -123,10 +123,9 @@ module Smoke
           # Otherwise it gives me the remaining bytes, which is 0.
           args[:data].rewind
           self.size = args[:data].read.size
-          self.move_object :source => tempfile, :destination => active_path, :force => true
+          self.move :source => tempfile, :destination => active_path, :force => true
         else
-          self.delete_object tempfile
-          raise "[LocalFileStore.store_object]: Digests do not match"
+          self.delete tempfile
         end
         yield digest,size if block_given?
       end
@@ -138,7 +137,7 @@ module Smoke
       def trash_object
         self.delete_marker = true
         self.mkdir(self.trash_dir)
-        self.move_object :source => self.active_path, :destination => self.trash_path, :force => true
+        self.move :source => self.active_path, :destination => self.trash_path, :force => true
         self.save
       end
       

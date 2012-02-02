@@ -22,11 +22,19 @@ module Smoke
       trash_object
     end
       
-    def store(data, etag)
-      store_object(:data => data, :etag => etag ) do |digest,size|
+    def store(data)
+      store_object(:data => data, :etag => self.etag ) do |digest,size|
         self.size = size
         self.etag = digest
+        self.save
       end  
+    end
+    
+    class << self
+      def find_or_create(user, bucket, key)
+        @object = SmObject.find(:object_key => key)
+        @object ||= SmObject.new(:object_key => key, :bucket_id => bucket.id, :user_id => user.id)
+      end
     end
     
     # belongs_to :user

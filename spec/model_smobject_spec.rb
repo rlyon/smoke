@@ -45,7 +45,7 @@ describe "Smoke::SmBucket" do
     file = 'testfiles/bacon.txt'
     etag = 'd4c228bdc5749ea3b20c3e07d5f1eb65'
     data = File.new(File.dirname(__FILE__) + '/' + file, 'r')
-    @obj1.store(data,etag)
+    @obj1.store(data)
     @obj1.etag.should == etag
     @obj1.size.should == 19971
     File.exists?(@obj1.path).should be_true
@@ -57,7 +57,7 @@ describe "Smoke::SmBucket" do
     file = 'testfiles/bacon.txt'
     etag = 'd4c228bdc5749ea3b20c3e07d5f1eb65'
     data = File.new(File.dirname(__FILE__) + '/' + file, 'r')
-    @obj1.store(data,etag)
+    @obj1.store(data)
     @obj1.etag.should == etag
     @obj1.size.should == 19971
     
@@ -71,7 +71,7 @@ describe "Smoke::SmBucket" do
     file = 'testfiles/bacon.txt'
     etag = 'd4c228bdc5749ea3b20c3e07d5f1eb65'
     data = File.new(File.dirname(__FILE__) + '/' + file, 'r')
-    @obj1.store(data,etag)
+    @obj1.store(data)
     @obj1.etag.should == etag
     @obj1.size.should == 19971
     

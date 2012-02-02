@@ -30,16 +30,11 @@ module Smoke
         if acl == :full_control
           return acl_all_values
         elsif acl == :write
-          return [:write, :read]
+          return [:read, :write]
         elsif acl == :write_acl
-          return [:write_acl, :read_acl]
+          return [:read_acl, :write_acl]
         end
         [acl]
-      end
-      
-      def add(acl)
-        raise "[Permissions]: Invalid acl specified" unless self.acl_all_values.include?(acl)
-        Acl.new( :obj_id => self.id, :user_id => user.id, :permission => acl.to_s )
       end
       
       def clear
@@ -54,7 +49,9 @@ module Smoke
           # return [:read]
           return [] if acl_list.empty?
         else
-          acl_list.map { |acl| acl.permission.to_sym }
+          acls = acl_list.map { |acl| acl.permission.to_sym }
+          inherit = acls | acls.inject([]) { |arr,acl| arr | self.acl_inherited_values(acl) }
+          inherit
         end
       end
     

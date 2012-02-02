@@ -10,7 +10,11 @@ module Sinatra
           @object = object(args[:object])
         end
       end
+      
       @prefix = params.has_key?('prefix') ? params['prefix'] : ''
+      @amz = env['smoke.amz_headers']
+      
+      @amz_directive = @amz && @amz.has_key?('x-amz-metadata-directive') ? @amz['x-amz-metadata-directive'] : nil
     end
     
     def user

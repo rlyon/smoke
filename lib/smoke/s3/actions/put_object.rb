@@ -1,27 +1,10 @@
 module Smoke
   module S3
     class App < Sinatra::Base
-    
-      # This may end up being a special case used to create application/x-directory
-      # objects.  Assets already handles this in the write method.
-      put '/:bucket/*/' do |bucket,asset|
-        setup :bucket => bucket
-        require_acl :write, @bucket
-        
-        
-        @asset = @bucket.find_or_create_asset_by_key(asset)
-        @asset.lock
-        @asset.write("", "application/x-directory")
-        @asset.unlock
-        respond_ok(nil,{:etag => @asset.etag})
-      end
       
       # Put operations on objects(assets)
-      put '/:bucket/*' do |bucket,asset|
-        @user = request.env['smoke.user']
-        @bucket = Bucket.find_by_name(bucket)
-        respond_error(:NoSuchBucket) if @bucket.nil?
-        log_access(:PUT, @user, @bucket)
+      put '/:bucket/*/?' do |bucket,asset|
+        setup :bucket => bucket
         
         if params.has_key?('acl')
           @asset = @bucket.assets.find_by_key(asset)
@@ -36,22 +19,24 @@ module Smoke
           end
           respond_ok
         else
-          require_acl :write_acl, @bucket
-          @amz = env['smoke.amz_headers']
-          @directive = @amz['x-amz-metadata-directive']
+          require_acl :write, @bucket
           
           # Preform a copy if copy source is defined
-          if !@directive.nil? && @amz['x-amz-copy-source']
+          if @amz_directive && @amz['x-amz-copy-source']
             respond_error(:NotImplemented)
             # @asset = @bucket.find_or_create_asset_by_key(@amz['x-amz-copy-source'])
             # @asset.copy(asset)
           # Otherwise upload the new object
           else
-            @asset = @bucket.find_or_create_asset_by_key(asset)
+            @asset = SmObject.find_or_create(@user, @bucket, asset)
+            @asset.content_type = request.content_type
+            @asset.save
+            
             @asset.lock
-            @asset.write(request.body, request.content_type)
+            @asset.store(request.body)
             @asset.unlock
-            if @asset.is_placeholder_directory?
+            
+            if @asset.is_placeholder?
               respond_ok
             else
               respond_ok(nil,{:etag => @asset.etag})
