@@ -29,6 +29,23 @@ describe "S3::Auth" do
     @app ||= Smoke::S3::Auth.new(proc {|env| [200,{},[]]})
   end
   
+    
+  it "should act appropriately to search engines" do
+    get '/favicon.ico', {}, {
+      "REQUEST_PATH"=>"/favicon.ico",
+      "PATH_INFO"=>"/favicon.ico",
+      "REQUEST_URI"=>"/favicon.ico"}
+    last_response.should_not be_ok
+    last_response.status.should == 404
+    
+    get '/robots.txt', {}, {
+      "REQUEST_PATH"=>"/robots.txt",
+      "PATH_INFO"=>"/robots.txt",
+      "REQUEST_URI"=>"/robots.txt"}
+    last_response.should_not be_ok
+    last_response.status.should == 404
+  end
+  
   it "should respond to /" do
     get '/', {}, {
       "REQUEST_PATH"=>"/",

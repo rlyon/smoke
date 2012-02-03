@@ -1,5 +1,5 @@
 --- 
-chdir: /Users/rlyon/src/ruby/sinatra/smoke
+chdir: /home/rlyon/src/smoke
 environment: development
 address: 127.0.0.1
 servers: 1

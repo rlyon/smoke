@@ -35,3 +35,18 @@ task :environment do
   env = ENV['RACK_ENV'] ? ENV['RACK_ENV'] : "development"
   SMOKE_CONFIG = YAML::load(File.open('config/settings/smoke.yml'))[env]
 end
+
+namespace :db do
+  task :seed => :environment do
+    env = ENV['RACK_ENV'] ? ENV['RACK_ENV'] : "development"
+    Smoke.database = "smoke_#{env}"
+    Smoke::User.new(:active => true, :username => "rlyon", :access_id => "0PN5J17HBGZHT7JJ3X82", :secret_key => "uV3F3YluFJax1cknvbcGwgjvx4QpvB+leU8dUj2o", :display_name => "Rob").save
+  end
+  
+  task :reset => :environment do
+    env = ENV['RACK_ENV'] ? ENV['RACK_ENV'] : "development"
+    Smoke.database = "smoke_#{env}"
+    Smoke.collection('user').remove({})
+    Smoke.collection('smbucket').remove({})
+  end
+end

@@ -16,8 +16,9 @@ module Smoke
         # Bypass signature for https password authentication in post
         return @app.call(env) if env['REQUEST_METHOD'] == "POST" && env['REQUEST_PATH'] == "/"
         
-        # I should use a regex to handle all finle that a browser expects
+        # I should use a regex to handle all files that a browser expects
         return [404,{},[]] if env['REQUEST_PATH'] == "/favicon.ico"
+        return [404,{},[]] if env['REQUEST_PATH'] == "/robots.txt"
         
         return error(env, :MissingSecurityHeader) unless request.has_auth?
         request.find_user
@@ -80,11 +81,11 @@ module Smoke
         def initialize(env)
           super(env)
           parse_headers
-          parse_bucket_and_path do |bucket,path|
+          
+          parse_and_mangle do |bucket,path|
             env['smoke.bucket'] = bucket
             env['smoke.path'] = path
           end
-          mangle_request if is_dns_style_bucket?
         end
         
         def valid?
@@ -103,7 +104,7 @@ module Smoke
         end
         
         def amz_date
-          if env.has_key?('smoke.amz_headers') && env['smoke.amz_headers'].has_key?('x-amz-date')
+          if env['smoke.amz_headers'] && env['smoke.amz_headers'].has_key?('x-amz-date')
             env['smoke.amz_headers']['x-amz-date'][0]
           else
             env['HTTP_DATE']
@@ -168,7 +169,7 @@ module Smoke
         end
         
         def has_auth?
-          if env['HTTP_AUTHORIZATION']
+          if env.has_key?('HTTP_AUTHORIZATION')
             true
           elsif params['AWSAccessKeyId'] && params['Signature']
             true
@@ -182,22 +183,25 @@ module Smoke
           !env['smoke.user'].nil?
         end
         
-        def parse_bucket_and_path
+        def parse_and_mangle
           # No bucket has been specified as dns style or alternate path style
+          uri = URI::parse(env['REQUEST_URI'])
+          env['REQUEST_PATH'] = uri.path
+          env['PATH_INFO'] = uri.path
+          
           unless host =~ /^#{SMOKE_CONFIG['host']}/
             bucket = host.split('.')[0]
             path = env['REQUEST_PATH'].empty? ? '/' : env['REQUEST_PATH']
           else # the bucket must be part of the path...
             unless env['REQUEST_PATH'] == "/"
               bucket = env['REQUEST_PATH'].split('/')[1]
-              # puts @request.path
-              # puts bucket
               path = env['REQUEST_PATH'].gsub("/" + bucket, "")
             else
               bucket = ""
               path = '/'
             end
           end
+          mangle_request if is_dns_style_bucket?
           yield(bucket,path)
         end
         
